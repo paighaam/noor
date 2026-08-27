@@ -34,11 +34,11 @@ Use for: classification, drafting, summarization, extraction.
 Do NOT use for: routing, retries, deterministic transforms.
 If code can answer, code answers.
 
-### Rule 6 — Token budgets are not advisory
+### Rule 6 — Explicit budgets and honest checkpoints
 
-Per-task: 4,000 tokens. Per-session: 30,000 tokens.
-If approaching budget, summarize and start fresh.
-Surface the breach. Do not silently overrun.
+Honor explicit user/runtime budgets. Do not invent default token caps that stop required
+verification. If context or a real resource limit is reached, checkpoint verified state and pending
+work honestly; do not label an incomplete assignment complete. See `delivery.md`.
 
 ### Rule 7 — Surface conflicts, don't average them
 

@@ -1,0 +1,46 @@
+{
+  "protocol": 1,
+  "id": "replace-task",
+  "objective": "REPLACE_WITH_OBSERVABLE_OUTCOME",
+  "owner": "REPLACE_WITH_OWNER",
+  "issue": "REPLACE_WITH_DURABLE_TASK",
+  "non_goals": [
+    "merge",
+    "deployment",
+    "unrelated changes"
+  ],
+  "source_revision": "0000000000000000000000000000000000000000",
+  "scope_base": "0000000000000000000000000000000000000000",
+  "allowed_paths": [
+    "REPLACE_WITH_OWNED_PATHS"
+  ],
+  "blockers": [
+    {
+      "owner": "coordinator",
+      "reason": "Template is not an executable assignment yet",
+      "unblock": "Verify scope, refs, dependencies, commands and behavior-linked acceptance before removing this blocker"
+    }
+  ],
+  "dependencies": [],
+  "checks": [
+    {
+      "id": "replace-check",
+      "layer": "unit",
+      "argv": [
+        "REPLACE_WITH_REAL_COMMAND",
+        "{report}"
+      ],
+      "cwd": ".",
+      "report": "junit",
+      "timeout_seconds": 300
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "replace-criterion",
+      "behavior": "REPLACE_WITH_OBSERVABLE_BEHAVIOR",
+      "check": "replace-check",
+      "test_pattern": "REPLACE_WITH_TEST_CASE"
+    }
+  ]
+}
