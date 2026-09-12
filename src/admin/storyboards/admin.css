@@ -1,0 +1,675 @@
+/* ============================================================
+   Noor Admin Console & Masjid Approvals Stylesheet
+   Strict adherence to semantic tokens: --color-*, --font-*,
+   --size-*, --radius-*, --shadow-*, --motion-*.
+   Zero raw --noor-* primitives. Zero hardcoded hex.
+   ============================================================ */
+
+.adm-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-surface-primary);
+  color: var(--color-info-primary);
+  font-family: var(--font-body);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.adm-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--size-md);
+  padding: var(--size-md);
+  background: color-mix(in oklab, var(--color-surface-primary) 90%, transparent);
+  border-bottom: 1px solid var(--color-neutral-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.adm-bar-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-bar-title {
+  font-family: var(--font-title);
+  font-size: var(--body-lg-size);
+  font-weight: 800;
+  color: var(--color-info-primary);
+  line-height: 1.2;
+}
+
+.adm-bar-sub {
+  font-size: var(--body-xs-size);
+  color: var(--color-info-secondary);
+  line-height: 1.2;
+}
+
+.adm-bar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-circle);
+  background: color-mix(in oklab, var(--color-info-primary) 8%, transparent);
+  color: var(--color-info-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.adm-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--size-md) var(--size-md) calc(var(--size-2xl) + 64px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-md);
+  box-sizing: border-box;
+}
+
+/* ── Hero / Top Header ── */
+.adm-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--size-md) var(--size-md);
+  background: color-mix(in oklab, var(--color-action-primary) 8%, var(--color-surface-card));
+  border: 1px solid color-mix(in oklab, var(--color-action-primary) 22%, var(--color-neutral-border));
+  border-radius: var(--radius-2xl);
+  margin-bottom: var(--size-xs);
+}
+
+.adm-hero-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-xl);
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: var(--body-md-size);
+  flex-shrink: 0;
+}
+
+.adm-hero-info {
+  flex: 1;
+  margin-left: var(--size-md);
+  min-width: 0;
+}
+
+.adm-hero-name {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: var(--body-md-size);
+  line-height: var(--body-md-lh);
+  color: var(--color-info-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-hero-role {
+  font-size: var(--body-xs-size);
+  line-height: var(--body-xs-lh);
+  color: var(--color-action-primary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--size-xs);
+}
+
+/* ── Stats Grid ── */
+.adm-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--size-sm);
+  margin-bottom: var(--size-xs);
+}
+
+.adm-stat-pill {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-md) var(--size-sm);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: var(--radius-xl);
+  text-align: center;
+}
+
+.adm-stat-num {
+  font-family: var(--font-title);
+  font-size: var(--title-h2-size);
+  line-height: 1.1;
+  font-weight: 800;
+  color: var(--color-info-primary);
+}
+
+.adm-stat-num.urgent {
+  color: var(--color-status-warning);
+}
+
+.adm-stat-lbl {
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--color-info-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: var(--size-xs);
+}
+
+/* ── Urgent Queue Action Banner ── */
+.adm-urgent-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--size-md);
+  background: color-mix(in oklab, var(--color-status-warning) 12%, var(--color-surface-card));
+  border: 1px solid color-mix(in oklab, var(--color-status-warning) 36%, transparent);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: transform var(--motion-press) var(--ease-out);
+}
+
+.adm-urgent-banner:active {
+  transform: scale(0.98);
+}
+
+.adm-urgent-left {
+  display: flex;
+  align-items: center;
+  gap: var(--size-md);
+  min-width: 0;
+}
+
+.adm-urgent-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-lg);
+  background: var(--color-status-warning);
+  color: var(--color-info-primary-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.adm-urgent-title {
+  font-weight: 700;
+  font-size: var(--body-sm-size);
+  color: var(--color-info-primary);
+}
+
+.adm-urgent-sub {
+  font-size: var(--body-xs-size);
+  color: var(--color-info-secondary);
+  margin-top: 2px;
+}
+
+.adm-badge-count {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-status-warning);
+  color: var(--color-info-primary-inverse);
+  font-size: var(--body-xs-size);
+  font-weight: 700;
+}
+
+/* ── Console Quick Action Tiles ── */
+.adm-section-title {
+  font-family: var(--font-title);
+  font-size: var(--body-sm-size);
+  font-weight: 700;
+  color: var(--color-info-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: var(--size-sm);
+  margin-bottom: var(--size-xs);
+  padding-left: var(--size-xs);
+}
+
+.adm-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--size-sm);
+}
+
+.adm-action-tile {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-md);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: var(--radius-2xl);
+  cursor: pointer;
+  transition: transform var(--motion-press) var(--ease-out), border-color var(--motion-quick) var(--ease-out);
+  text-align: left;
+}
+
+.adm-action-tile:active {
+  transform: scale(0.98);
+  background: var(--color-surface-secondary);
+}
+
+.adm-action-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-xl);
+  background: color-mix(in oklab, var(--color-action-primary) 12%, transparent);
+  color: var(--color-action-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: var(--size-md);
+}
+
+.adm-action-title {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: var(--body-sm-size);
+  color: var(--color-info-primary);
+}
+
+.adm-action-meta {
+  font-size: var(--body-xs-size);
+  color: var(--color-info-secondary);
+  margin-top: 2px;
+}
+
+/* ── Approvals Queue & Lead Cards ── */
+.adm-queue-filters {
+  display: flex;
+  gap: var(--size-xs);
+  overflow-x: auto;
+  padding-bottom: var(--size-xs);
+  margin-bottom: var(--size-xs);
+}
+
+.adm-lead-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-md);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: var(--radius-2xl);
+  cursor: pointer;
+  transition: transform var(--motion-press) var(--ease-out), border-color var(--motion-quick) var(--ease-out);
+}
+
+.adm-lead-card:active {
+  transform: scale(0.99);
+}
+
+.adm-lead-card.claimed {
+  border-color: color-mix(in oklab, var(--color-action-primary) 36%, var(--color-neutral-border));
+  background: color-mix(in oklab, var(--color-action-primary) 3%, var(--color-surface-card));
+}
+
+.adm-lead-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--size-sm);
+}
+
+.adm-lead-title {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: var(--body-md-size);
+  line-height: 1.3;
+  color: var(--color-info-primary);
+}
+
+.adm-claim-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklab, var(--color-action-primary) 14%, transparent);
+  color: var(--color-action-primary);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-lead-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-sm);
+  font-size: var(--body-xs-size);
+  color: var(--color-info-secondary);
+  margin-top: var(--size-xs);
+}
+
+.adm-lead-submitter {
+  margin-top: var(--size-sm);
+  padding-top: var(--size-sm);
+  border-top: 1px solid var(--color-neutral-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--body-xs-size);
+}
+
+.adm-lead-contact {
+  display: flex;
+  align-items: center;
+  gap: var(--size-xs);
+  color: var(--color-info-primary);
+  font-weight: 600;
+}
+
+/* ── Claimed Review & Field Comparison Layout ── */
+.adm-claimed-banner {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-md);
+  border-radius: var(--radius-2xl);
+  background: color-mix(in oklab, var(--color-action-primary) 8%, var(--color-surface-card));
+  border: 1px solid color-mix(in oklab, var(--color-action-primary) 24%, var(--color-neutral-border));
+}
+
+.adm-diff-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-xs);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklab, var(--color-status-warning) 16%, transparent);
+  color: var(--color-status-warning);
+  font-size: var(--body-xs-size);
+  font-weight: 700;
+  align-self: flex-start;
+  margin-bottom: var(--size-xs);
+}
+
+.adm-diff-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-md);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: var(--radius-2xl);
+  gap: var(--size-sm);
+}
+
+.adm-diff-card.has-conflict {
+  border-color: color-mix(in oklab, var(--color-status-warning) 40%, var(--color-neutral-border));
+}
+
+.adm-diff-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-diff-field-name {
+  font-family: var(--font-title);
+  font-size: var(--body-sm-size);
+  font-weight: 700;
+  color: var(--color-info-primary);
+}
+
+.adm-diff-status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.adm-diff-status-pill.diff {
+  background: color-mix(in oklab, var(--color-status-warning) 16%, transparent);
+  color: var(--color-status-warning);
+}
+
+.adm-diff-status-pill.same {
+  background: color-mix(in oklab, var(--color-status-success) 16%, transparent);
+  color: var(--color-status-success);
+}
+
+/* 2-Column Pick Option Grid */
+.adm-diff-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--size-sm);
+}
+
+.adm-diff-opt {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-sm) var(--size-md);
+  border: 1.5px solid var(--color-neutral-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-primary);
+  cursor: pointer;
+  transition: all var(--motion-quick) var(--ease-out);
+  position: relative;
+}
+
+.adm-diff-opt.selected {
+  border-color: var(--color-action-primary);
+  background: color-mix(in oklab, var(--color-action-primary) 8%, var(--color-surface-card));
+}
+
+.adm-diff-opt-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--size-xs);
+}
+
+.adm-diff-opt-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-info-secondary);
+}
+
+.adm-diff-opt.selected .adm-diff-opt-label {
+  color: var(--color-action-primary);
+}
+
+.adm-diff-opt-radio {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-circle);
+  border: 1.5px solid var(--color-info-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-diff-opt.selected .adm-diff-opt-radio {
+  border-color: var(--color-action-primary);
+  background: var(--color-action-primary);
+}
+
+.adm-diff-opt-radio-inner {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-circle);
+  background: var(--color-action-primary-inverse);
+}
+
+.adm-diff-opt-val {
+  font-size: var(--body-xs-size);
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--color-info-primary);
+  word-break: break-word;
+}
+
+/* ── Live Composite Summary Preview ── */
+.adm-composite-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-md);
+  background: color-mix(in oklab, var(--color-action-primary) 6%, var(--color-surface-card));
+  border: 1px dashed var(--color-action-primary);
+  border-radius: var(--radius-2xl);
+  gap: var(--size-xs);
+}
+
+.adm-composite-title {
+  font-family: var(--font-title);
+  font-size: var(--body-xs-size);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-action-primary);
+  margin-bottom: 2px;
+}
+
+.adm-composite-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--body-xs-size);
+  padding: 3px 0;
+  border-bottom: 1px dotted var(--color-neutral-border);
+}
+
+.adm-composite-row:last-child {
+  border-bottom: 0;
+}
+
+.adm-composite-key {
+  color: var(--color-info-secondary);
+}
+
+.adm-composite-val {
+  font-weight: 600;
+  color: var(--color-info-primary);
+  text-align: right;
+  max-width: 60%;
+}
+
+/* ── Attached Photos Preview ── */
+.adm-media-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--size-sm);
+  margin-top: var(--size-xs);
+}
+
+.adm-media-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--color-neutral-border);
+  background: var(--color-surface-card);
+  cursor: pointer;
+}
+
+.adm-media-img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  background: var(--color-surface-secondary);
+}
+
+.adm-media-caption {
+  padding: var(--size-xs) var(--size-sm);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-info-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Docked Bottom Action Bar ── */
+.adm-docked-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--size-md);
+  background: color-mix(in oklab, var(--color-surface-primary) 92%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--color-neutral-border);
+  display: flex;
+  gap: var(--size-md);
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.adm-docked-bar .btn {
+  flex: 1;
+}
+
+/* ── Modal / Rejection Sheet Overlay ── */
+.adm-sheet-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.adm-sheet-content {
+  background: var(--color-surface-card);
+  border-top-left-radius: var(--radius-2xl);
+  border-top-right-radius: var(--radius-2xl);
+  padding: var(--size-lg) var(--size-md) var(--size-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-md);
+  max-height: 85%;
+  overflow-y: auto;
+}
+
+.adm-sheet-title {
+  font-family: var(--font-title);
+  font-size: var(--title-h3-size);
+  font-weight: 700;
+  color: var(--color-info-primary);
+}
+
+.adm-reason-item {
+  display: flex;
+  align-items: center;
+  gap: var(--size-sm);
+  padding: var(--size-md);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: var(--radius-xl);
+  font-size: var(--body-sm-size);
+  color: var(--color-info-primary);
+  cursor: pointer;
+  transition: background var(--motion-quick) var(--ease-out);
+}
+
+.adm-reason-item:active {
+  background: var(--color-surface-secondary);
+}
+
+.adm-reason-item.selected {
+  border-color: var(--color-status-error);
+  background: color-mix(in oklab, var(--color-status-error) 8%, var(--color-surface-card));
+  color: var(--color-status-error);
+  font-weight: 600;
+}

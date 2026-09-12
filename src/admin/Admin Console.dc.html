@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../support.js"></script>
+<script src="../_theme/chrome.js"></script>
+<script src="./storyboards/admin-state.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="../_ds/noor-design-system-46f42e91-1858-412f-bdb6-560a6cc3df9f/colors_and_type.css">
+  <link rel="stylesheet" href="../_theme/poc.css">
+  <link rel="stylesheet" href="../_theme/components.css">
+  <script src="../_ds/noor-design-system-46f42e91-1858-412f-bdb6-560a6cc3df9f/_ds_bundle.js"></script>
+  <link rel="stylesheet" href="../_theme/icons.css">
+  <link rel="stylesheet" href="./storyboards/admin.css">
+  <style>
+    body { background: var(--canvas-bg); padding: 36px 32px 90px; min-height: 100vh; box-sizing: border-box; }
+    ::-webkit-scrollbar { display: none; } * { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</helmet>
+
+<!-- Screen kit loader -->
+<div style="display:none">
+  <x-import component="AdminHomeScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="AdminQueueScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="StandardReviewScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="ClaimedReviewScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+</div>
+
+<x-import component="BoardHeader" from="../_theme/board.jsx"
+          title="Admin Console — Home &amp; Masjid Approvals"
+          subtitle="Platform operations console for Super Admins. Real-time pending queue, standard registration review, and the Claimed Masjid point-by-point data pick-and-merge flow comparing user submissions against sourced directory records."
+          hint-size="1440px,92px"></x-import>
+
+<div class="poc-stage">
+  <div class="poc-frames">
+    <x-import component="AdminBoard" from="./storyboards/admin-board.jsx"
+              active="{{ activeFrame }}" on-select-frame="{{ selectFrame }}"
+              hint-size="1600px,3800px"></x-import>
+  </div>
+
+  <x-import component="BoardLive" from="../_theme/board.jsx" restart="{{ restart }}"
+            hint-size="400px,900px">
+    <x-import component="IOSDevice" from="../ios-frame.jsx" hint-size="402px,874px">
+      <div style="width:100%;height:100%;position:relative;overflow:hidden;background:var(--color-surface-primary)">
+
+        <sc-if value="{{ isHome }}">
+          <div style="position:absolute;inset:0">
+            <x-import component="AdminHomeScreen" from="./storyboards/admin-screens.jsx"
+                      data="{{ data }}" on-navigate="{{ navigate }}" hint-size="100%,100%"></x-import>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isQueue }}">
+          <div style="position:absolute;inset:0">
+            <x-import component="AdminQueueScreen" from="./storyboards/admin-screens.jsx"
+                      data="{{ data }}" on-navigate="{{ navigate }}" hint-size="100%,100%"></x-import>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStdReview }}">
+          <div style="position:absolute;inset:0">
+            <x-import component="StandardReviewScreen" from="./storyboards/admin-screens.jsx"
+                      data="{{ data }}" on-navigate="{{ navigate }}" hint-size="100%,100%"></x-import>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isClaimedReview }}">
+          <div style="position:absolute;inset:0">
+            <x-import component="ClaimedReviewScreen" from="./storyboards/admin-screens.jsx"
+                      data="{{ data }}" on-navigate="{{ navigate }}"
+                      on-update-selection="{{ updateSelection }}" hint-size="100%,100%"></x-import>
+          </div>
+        </sc-if>
+
+      </div>
+    </x-import>
+  </x-import>
+</div>
+
+</x-dc>
+
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    activeFrame: 0,
+    currentScreen: 'home',
+    filter: 'ALL',
+    search: '',
+    leadId: 'lead-claim-101',
+    mergeSelections: {
+      name: 'LEAD',
+      maslak: 'LEAD',
+      address: 'LEAD',
+      city: 'MASJID',
+      state: 'MASJID',
+      pincode: 'MASJID',
+      coordinates: 'LEAD',
+      role: 'LEAD',
+    },
+    showRejectSheet: false,
+    showConfirmDialog: false,
+    isSuccess: false,
+  };
+
+  selectFrame = (index) => {
+    const frames = window.ADMIN_FRAMES || [];
+    const frame = frames[index];
+    if (!frame) return;
+
+    this.setState({
+      activeFrame: index,
+      currentScreen: frame.screen,
+      ...frame.state,
+    });
+  };
+
+  navigate = (screen, params) => {
+    this.setState((s) => ({
+      currentScreen: screen,
+      showRejectSheet: false,
+      showConfirmDialog: false,
+      isSuccess: false,
+      ...(params || {}),
+    }));
+  };
+
+  updateSelection = (fieldKey, mergeType) => {
+    this.setState((s) => ({
+      mergeSelections: {
+        ...s.mergeSelections,
+        [fieldKey]: mergeType,
+      },
+    }));
+  };
+
+  restart = () => {
+    this.selectFrame(0);
+  };
+
+  renderVals() {
+    const s = this.state;
+    const baseState = {
+      admin: window.MOCK_ADMIN,
+      leads: window.MOCK_LEADS,
+      sourcedMasjid: window.MOCK_SOURCED_MASJID,
+      rejectionReasons: [
+        'Incomplete or unverified authorization document',
+        'Cannot verify committee identity or contact number',
+        'Duplicate registration request for an active masjid',
+        'Address or coordinates do not match a physical masjid location',
+        'Requested role cannot be validated',
+        'Other reason (details provided in follow-up call)',
+      ],
+      filter: s.filter,
+      search: s.search,
+      leadId: s.leadId,
+      mergeSelections: s.mergeSelections,
+      showRejectSheet: s.showRejectSheet,
+      showConfirmDialog: s.showConfirmDialog,
+      isSuccess: s.isSuccess,
+    };
+
+    const assembledData = window.buildAdminData ? window.buildAdminData(baseState, {}) : baseState;
+
+    return {
+      activeFrame: s.activeFrame,
+      currentScreen: s.currentScreen,
+      isHome: s.currentScreen === 'home',
+      isQueue: s.currentScreen === 'queue',
+      isStdReview: s.currentScreen === 'standard-review',
+      isClaimedReview: s.currentScreen === 'claimed-review',
+      data: assembledData,
+      selectFrame: this.selectFrame,
+      navigate: this.navigate,
+      updateSelection: this.updateSelection,
+      restart: this.restart,
+    };
+  }
+}
+</script>
+</body>
+</html>
