@@ -42,7 +42,11 @@
 
     membersStatus: 'loaded', // 'loading' | 'loaded' | 'error'
     membersEmpty: false,
+    withdrawingId: null, // invitation withdrawal in flight
     memberId: null, // the member whose permission screen is open
+    ownerId: 'm1',
+    transferringId: null,
+    transferError: false,
     followersStatus: 'loaded',
     followersEmpty: false,
     followersLoadingMore: false,
@@ -168,7 +172,11 @@
       Object.assign(slices, {
         membersStatus: s.membersStatus,
         membersEmpty: !!s.membersEmpty,
+        withdrawingId: s.withdrawingId || null,
         memberId: s.memberId || null,
+        ownerId: s.ownerId,
+        transferringId: s.transferringId || null,
+        transferError: !!s.transferError,
         followersStatus: s.followersStatus,
         followersEmpty: !!s.followersEmpty,
         followersLoadingMore: !!s.followersLoadingMore,
@@ -240,12 +248,33 @@
         onConfirm: h.onConfirmAction,
       };
     }
+    if (confirm.kind === 'transferOwnership') {
+      const member = members.concat(state.extraMembers || []).find((m) => m.id === confirm.id);
+      return {
+        title: 'Transfer ownership?',
+        description: `${member ? member.name : 'This member'} becomes the owner and can appoint or remove managers. You stay a manager and will need the new owner or Paigham support to transfer ownership back. Committee titles stay the same.`,
+        confirmText: 'Transfer ownership',
+        onConfirm: h.onConfirmAction,
+      };
+    }
     if (confirm.kind === 'removeMember') {
       const member = members.find((m) => m.id === confirm.id);
       return {
-        title: 'Remove this member?',
-        description: `${member ? member.name : 'This member'} loses every permission and can no longer manage this masjid. Their paighams stay published. You can invite them again later.`,
-        confirmText: 'Remove member',
+        title: member && member.you ? 'Leave the committee?' : 'Remove this member?',
+        description: member && member.you ? 'You lose committee access. Your paighams stay published. The owner or a manager can invite you back.' : `${member ? member.name : 'This member'} loses every permission and can no longer manage this masjid. Their paighams stay published. You can invite them again later.`,
+        confirmText: member && member.you ? 'Leave committee' : 'Remove member',
+        destructive: true,
+        onConfirm: h.onConfirmAction,
+      };
+    }
+    if (confirm.kind === 'withdrawInvitation') {
+      const member = members.concat(state.extraMembers || []).find((m) => m.id === confirm.id);
+      return {
+        title: 'Withdraw this invitation?',
+        // Names the number, what stops, and that it is reversible — the same three answers the
+        // remove-member dialog gives.
+        description: `${member ? member.phone : 'This number'} can no longer accept it and gets no access to this masjid. You can invite them again later.`,
+        confirmText: 'Withdraw invitation',
         destructive: true,
         onConfirm: h.onConfirmAction,
       };
@@ -335,9 +364,10 @@
     const members = visible(
       (s.membersEmpty ? [] : (window.OPS_MEMBERS || [])).concat(s.extraMembers || []),
     ).map((m) => {
-      let next = m;
+      let next = Object.assign({}, m, { isOwner: m.id === s.ownerId && (m.you ? (s.caps || []).includes('committee') : true) });
       if (overrides[m.id]) next = Object.assign({}, next, { role: overrides[m.id] });
       if (capOverrides[m.id]) next = Object.assign({}, next, { caps: capOverrides[m.id] });
+      if (next.isOwner) next = Object.assign({}, next, { caps: Array.from(new Set((next.caps || []).concat(['committee']))) });
       return next;
     });
     const followers = visible(s.followersEmpty ? [] : (window.OPS_FOLLOWERS || []))
@@ -382,8 +412,11 @@
 
       members: {
         status: s.membersStatus,
+        withdrawingId: s.withdrawingId || null,
         items: members,
         editing: members.find((m) => m.id === s.memberId) || null,
+        transferringId: s.transferringId,
+        transferError: s.transferError,
         adminCount: members.filter((m) => (m.caps || []).indexOf('committee') !== -1).length,
         followers,
         followersStatus: s.followersStatus,
@@ -448,13 +481,23 @@
     { group: 'members', name: 'Member permissions', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm3' } },
     { group: 'members', name: 'Member · role picker', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm3', openMenu: 'member-role' } },
     { group: 'members', name: 'Member · full admin', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm2' } },
-    { group: 'members', name: 'Member · sole admin', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm1' } },
+    { group: 'members', name: 'Member · owner', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm1' } },
     { group: 'members', name: 'Member · invited', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm5' } },
     { group: 'members', name: 'Remove confirmation', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm4', confirm: { kind: 'removeMember', id: 'm4' } } },
     { group: 'members', name: 'Removed · confirmation', screen: 'console', state: { route: 'console', dest: 'members', snack: { kind: 'member-removed', message: 'Yusuf Ali removed from the committee' } } },
+    { group: 'members', name: 'Withdraw invitation · confirmation', screen: 'console', state: { route: 'console', dest: 'members', confirm: { kind: 'withdrawInvitation', id: 'm5' } } },
+    { group: 'members', name: 'Withdrawing invitation', screen: 'console', state: { route: 'console', dest: 'members', withdrawingId: 'm5' } },
+    { group: 'members', name: 'Invitation withdrawn', screen: 'console', state: { route: 'console', dest: 'members', hidden: ['m5'], snack: { kind: 'invitation-withdrawn', message: 'Invitation withdrawn' } } },
     { group: 'members', name: 'Load failed · retry', screen: 'console', state: { route: 'console', dest: 'members', membersStatus: 'error' } },
 
     // 03 · Invitations & musalleen
+    { group: 'members', name: 'Manager viewing owner', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm2', ownerId: 'm2' } },
+    { group: 'members', name: 'Manager viewing manager', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm2', ownerId: 'm3' } },
+    { group: 'members', name: 'Transfer ownership', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm2', confirm: { kind: 'transferOwnership', id: 'm2' } } },
+    { group: 'members', name: 'Transferring ownership', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm2', transferringId: 'm2' } },
+    { group: 'members', name: 'Transfer failed · retry', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm2', transferError: true } },
+    { group: 'members', name: 'Ownership transferred', screen: 'console', state: { route: 'console', dest: 'member', memberId: 'm2', ownerId: 'm2', snack: { kind: 'ownership-transferred', message: 'Ownership transferred' } } },
+
     { group: 'invite', name: 'Invite member', screen: 'console', state: { route: 'console', dest: 'invite' } },
     { group: 'invite', name: 'Role picker', screen: 'console', state: { route: 'console', dest: 'invite', invite: { phone: '98861 40219' }, openMenu: 'member-role' } },
     { group: 'invite', name: 'Permissions chosen', screen: 'console', state: { route: 'console', dest: 'invite', invite: { phone: '98861 40219', role: 'ASSISTANT_SECRETARY', caps: ['post'] } } },
