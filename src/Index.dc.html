@@ -48,7 +48,7 @@
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <div style="background:var(--color-surface-secondary);border-radius:999px;padding:7px 14px;font-family:var(--font-body);font-size:12px;font-weight:700;color:var(--color-action-primary)">30 pages</div>
+      <div style="background:var(--color-surface-secondary);border-radius:999px;padding:7px 14px;font-family:var(--font-body);font-size:12px;font-weight:700;color:var(--color-action-primary)">{{ pageCount }} pages</div>
       <div style="background:var(--color-surface-secondary);border-radius:999px;padding:7px 14px;font-family:var(--font-body);font-size:12px;font-weight:700;color:var(--color-action-primary)">Interactive</div>
       <div style="background:var(--color-surface-secondary);border-radius:999px;padding:7px 14px;font-family:var(--font-body);font-size:12px;font-weight:700;color:var(--color-action-primary)">Light · Dark · System</div>
     </div>
@@ -140,7 +140,8 @@ class Component extends DCLogic {
           artColor: 'var(--color-action-primary)',
         })),
       }));
-    return { chips, sections };
+    const pageCount = this.data.reduce((total, sec) => total + sec.items.length, 0);
+    return { chips, sections, pageCount };
   }
 }
 </script>

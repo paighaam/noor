@@ -26,14 +26,16 @@ function GenderCard({ illustration, label, selected, onClick, disabled = false }
 
 // PERSONAL DETAILS — profile completion form (PersonalDetailsScreen.kt). Complete Setup validates:
 // name < 3 chars → nameError, no gender → genderError (the gender row shakes via `shakeKey`).
-function PersonalDetailsScreen({ name = '', onNameTap, gender = null, onSelectGender, onCompleteSetup, onBack, onRetry, onDismissError, nameError = false, genderError = false, loading = false, submitStatus = null, serviceError = false, shakeKey = 0 }) {
+// `intro` and `actionText` default to onboarding's copy. The invitation inbox reuses this screen for a
+// member who accepts a committee role before ever giving a name, and only those two sentences differ.
+function PersonalDetailsScreen({ name = '', onNameTap, gender = null, onSelectGender, onCompleteSetup, onBack, onRetry, onDismissError, nameError = false, genderError = false, loading = false, submitStatus = null, serviceError = false, shakeKey = 0, intro = 'Tell us how to address you before we finish following your selected masjids.', actionText = 'Complete Setup' }) {
   const APPBAR_H = 96;
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: 'var(--color-surface-primary)' }}>
       {/* Content scrolls under the app bar */}
       <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingTop: APPBAR_H, paddingBottom: 96, boxSizing: 'border-box' }}>
         <div style={{ padding: '18px 24px 0' }}>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.55, color: 'var(--color-info-secondary)' }}>Tell us how to address you before we finish following your selected masjids.</div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.55, color: 'var(--color-info-secondary)' }}>{intro}</div>
 
           {/* Full Name */}
           <div style={{ marginTop: 28 }}>
@@ -77,7 +79,7 @@ function PersonalDetailsScreen({ name = '', onNameTap, gender = null, onSelectGe
         )}
         <div style={{ padding: '12px 16px 28px', background: 'var(--color-surface-primary)', boxSizing: 'border-box' }}>
           <button className="btn btn-filled lg" disabled={loading} aria-busy={loading ? 'true' : 'false'} onClick={onCompleteSetup} style={{ width: '100%' }}>
-            Complete Setup
+            {actionText}
           </button>
         </div>
       </div>

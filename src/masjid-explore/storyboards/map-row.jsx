@@ -10,6 +10,8 @@ const FRAMES = [
   { name: 'Following a masjid', selectedIdx: 0, followed: { 0: true } },
   { name: 'Another result selected', selectedIdx: 1, followed: { 0: true } },
   { name: 'Guest — sign in to follow', selectedIdx: 0, followed: {}, guest: true, sheet: true },
+  { name: 'Finding your location', selectedIdx: 0, followed: {}, locationState: 'locating' },
+  { name: 'Location unavailable — tap to enable', selectedIdx: 0, followed: {}, locationState: 'unavailable' },
 ];
 
 function MapRow({ active = -1, onSelectFrame }) {
@@ -29,7 +31,7 @@ function MapRow({ active = -1, onSelectFrame }) {
                 <div className="noor-frame-inner">
                   <div className="noor-screen">
                     <div className="noor-island"></div>
-                    {ExploreMapScreen && <ExploreMapScreen selectedIdx={f.selectedIdx} followed={f.followed} guest={f.guest} />}
+                    {ExploreMapScreen && <ExploreMapScreen selectedIdx={f.selectedIdx} followed={f.followed} guest={f.guest} locationState={f.locationState} />}
                     {f.sheet && Dialog && (
                       <Dialog mode="sheet" isOpen title="Sign in to follow masjids"
                               description="Sign in with your phone number to follow masjids and receive their prayer timings and updates."

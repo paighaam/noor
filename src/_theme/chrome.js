@@ -85,7 +85,7 @@
       { name: 'Masjid Onboarding', file: 'masjid-register/Masjid Onboarding.dc.html#entry', icon: 'add_home_work', meta: 'Section board · My Masjids sheet · screen-by-screen storyboard · 41 states' },
       { name: 'Masjid Console', file: 'masjid-operations/Masjid Console.dc.html', icon: 'campaign', meta: 'Section board · the masjid console · hub → committee · musalleen · details · invitations · send a paigham · 74 states' },
       { name: 'Salaah Timing Rules', file: 'masjid-operations/Salaah Timing Rules.dc.html', icon: 'schedule', meta: 'Section board · the whole Salaah section · the day dragged by rule · board scan · per-prayer rule · publish · 33 states' },
-      { name: 'Admin Console', file: 'admin/Admin Console.dc.html', icon: 'dashboard', meta: 'Section board · platform admin · approvals queue · claimed masjid pick-and-merge · 15 states' }
+      { name: 'Admin Console', file: 'admin/Admin Console.dc.html', icon: 'dashboard', meta: 'Section board · platform admin · hub with signups · approvals queue · request and claim review · paigham moderation · 33 states' }
     ]},
     { id: 'content', num: '05', title: 'Content & tools', items: [
       { name: 'Find Sehri', file: 'sehri/Sehri.dc.html#map', icon: 'restaurant', meta: 'Section board · Home → permission → map · list · 5 states' },

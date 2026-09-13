@@ -230,6 +230,8 @@
 <!-- Screen kit loader (the screens are used by both the board and the device below) -->
 <div style="display:none">
   <x-import component="ConsoleScreen" from="./storyboards/broadcast-studio-screens.jsx" hint-size="0,0"></x-import>
+  <!-- Onboarding's Personal Details screen, reused by the invitation inbox for a member with no name yet -->
+  <x-import component="PersonalDetailsScreen" from="../personal-details/storyboards/screens.jsx" hint-size="0,0"></x-import>
   <x-import component="ComposePostScreen" from="./storyboards/broadcast-studio-compose.jsx" hint-size="0,0"></x-import>
 </div>
 
@@ -298,6 +300,7 @@ class Component extends DCLogic {
     '#invite': { dest: 'invite' },
     '#create': { route: 'create' },
     '#invitations': { route: 'invitations' },
+    '#invitation-details': { route: 'invitations', needsDetails: true, invitationDetails: { id: 'i1', name: '', gender: null, nameError: false, genderError: false, saving: null, shakeKey: 0 } },
     '#locked': { consoleStatus: 'locked', role: 'MEMBER' },
   };
 
@@ -429,6 +432,7 @@ class Component extends DCLogic {
   onOpenSwitcher = () => this.patch({ switcherOpen: true, postMenuFor: null });
   onCloseSwitcher = () => this.patch({ switcherOpen: false });
   onPickMasjid = (masjidId) => {
+    if (this.state.transferringId) return;
     const pick = (window.OPS_MANAGED || []).find((m) => m.id === masjidId);
     // Switching from inside compose retargets the draft; it must not throw the author back
     // to the hub and lose what they have written.
@@ -453,6 +457,7 @@ class Component extends DCLogic {
     const id = this.state.memberId;
     const data = window.buildOpsData(this.state, {});
     const member = (data.members.items || []).find((m) => m.id === id);
+    if (!member || !data.me || !window.OPS_CAPS.isAdmin(data.caps) || (!data.me.isOwner && (member.isOwner || window.OPS_CAPS.isAdmin(member.caps)))) return;
     const available = window.opsAvailableCommitteeRoles(data.members.items, id);
     if (available.indexOf(role) === -1) {
       this.toast('role-taken', 'That committee role is already assigned', 'error');
@@ -468,7 +473,9 @@ class Component extends DCLogic {
   onToggleCapability = (memberId, capId) => {
     const data = window.buildOpsData(this.state, {});
     const member = (data.members.items || []).find((m) => m.id === memberId);
-    if (!member) return;
+    if (!member || !data.me || !window.OPS_CAPS.isAdmin(data.caps) || this.state.transferringId) return;
+    if (!data.me.isOwner && (member.isOwner || window.OPS_CAPS.isAdmin(member.caps) || capId === 'committee')) return;
+    if (member.isOwner && capId === 'committee') return;
     const current = member.caps || [];
     const next = current.indexOf(capId) === -1
       ? current.concat([capId])
@@ -482,7 +489,17 @@ class Component extends DCLogic {
       ? `${member.name} can now: ${label}`
       : `${label} removed for ${member.name}`);
   };
+  onOpenTransfer = (member) => {
+    const data = window.buildOpsData(this.state, {});
+    if (!data.me || !data.me.isOwner || !window.OPS_CAPS.isAdmin(data.caps) || this.state.transferringId) return;
+    this.patch({ transferError: false, confirm: { kind: 'transferOwnership', id: member.id } });
+  };
   onOpenRemove = (member) => this.patch({ confirm: { kind: 'removeMember', id: member.id } });
+  onWithdrawInvitation = (member) => {
+    const data = window.buildOpsData(this.state, {});
+    if (!data.me || !window.OPS_CAPS.isAdmin(data.caps) || (window.OPS_CAPS.isAdmin(member.caps) && !data.me.isOwner)) return;
+    this.patch({ confirm: { kind: 'withdrawInvitation', id: member.id } });
+  };
 
   // The invite is a destination screen, so opening it is navigation, not a flag.
   onOpenInvite = () => this.transitionTo({
@@ -500,6 +517,8 @@ class Component extends DCLogic {
     this.patch({ invite: { role }, openMenu: null });
   };
   onInviteCapability = (capId) => this.setState((st) => {
+    const data = window.buildOpsData(st, {});
+    if (capId === 'committee' && (!data.me || !data.me.isOwner)) return st;
     const caps = st.invite.caps || [];
     return window.opsApplyPatch(st, {
       invite: { caps: caps.indexOf(capId) === -1 ? caps.concat([capId]) : caps.filter((c) => c !== capId) },
@@ -640,13 +659,67 @@ class Component extends DCLogic {
   onAnother = () => this.patch({ route: 'create', stepDir: 'fwd', post: window.OPS_DEFAULT_STATE.post });
 
   // ── Invitations ──
+  // A member with no name yet gives it first: the committee list is a name and a role per row,
+  // and an accepted member with no name is a blank row on every admin's list.
   onAccept = (invitation) => {
+    if (this.state.needsDetails) {
+      this.patch({ invitationDetails: { id: invitation.id, name: '', gender: null, nameError: false, genderError: false, saving: null, shakeKey: 0 } });
+      return;
+    }
     this.patch({ invitationActioning: { id: invitation.id, kind: 'accept' } });
+    this.after(900, () => this.finishAccept(invitation));
+  };
+  // Where an accepted invitation lands. The LAST live one hands over to the console behind a
+  // named loader — the inbox has nothing left to come back to. Any other becomes the success
+  // card and offers the console: accepting a role is only useful if it hands you the thing you
+  // were given.
+  finishAccept = (invitation) => {
+    const s = this.state;
+    // One accepted card at a time: an earlier accept still offering its console leaves the list
+    // now, rather than falling back to a pending card the reader already answered.
+    const hidden = s.invitationAcceptedId ? s.hidden.concat([s.invitationAcceptedId]) : s.hidden;
+    const live = (window.OPS_INVITATIONS || []).filter(
+      (i) => !i.expired && i.id !== invitation.id && hidden.indexOf(i.id) === -1
+    );
+    if (!live.length) {
+      this.patch({ invitationActioning: null, invitationAcceptedId: null, invitationHandoff: invitation.id, hidden });
+      this.after(1100, () => this.onOpenAcceptedConsole(invitation));
+      return;
+    }
+    this.patch({ invitationActioning: null, invitationAcceptedId: invitation.id, hidden });
+    this.toast('invitation-accepted', 'Invitation accepted');
+  };
+  patchDetails = (change) => this.patch({ invitationDetails: Object.assign({}, this.state.invitationDetails, change) });
+  onDetailsName = () => {
+    const d = this.state.invitationDetails || {};
+    this.patchDetails({ name: d.name ? '' : 'Toufeeq Ahamed', nameError: false });
+  };
+  onDetailsGender = (gender) => this.patchDetails({ gender, genderError: false });
+  onDetailsBack = () => this.patch({ invitationDetails: null });
+  onDetailsDismiss = () => this.patchDetails({ saving: null });
+  onDetailsRetry = () => { this.patchDetails({ saving: null }); this.onDetailsSubmit(); };
+  // Save and accept: validate as onboarding does, then three requests in a fixed order — save the
+  // name and gender, follow the masjid (it becomes the member's primary), accept the invitation.
+  onDetailsSubmit = () => {
+    const d = this.state.invitationDetails;
+    if (!d) return;
+    const nameBad = (d.name || '').trim().length < 3;
+    const genderBad = !d.gender;
+    if (nameBad || genderBad) {
+      this.patchDetails({ nameError: nameBad, genderError: genderBad, shakeKey: (d.shakeKey || 0) + 1 });
+      return;
+    }
+    const invitation = (window.OPS_INVITATIONS || []).find((i) => i.id === d.id);
+    this.patchDetails({ saving: 'details', nameError: false, genderError: false });
     this.after(900, () => {
-      // The card becomes the success state and offers the console — accepting a role is
-      // only useful if it hands you the thing you were given.
-      this.patch({ invitationActioning: null, invitationAcceptedId: invitation.id });
-      this.toast('invitation-accepted', 'Invitation accepted');
+      this.patchDetails({ saving: 'following' });
+      this.after(900, () => {
+        this.patchDetails({ saving: 'accepting' });
+        this.after(900, () => {
+          this.patch({ needsDetails: false, invitationDetails: null });
+          if (invitation) this.finishAccept(invitation);
+        });
+      });
     });
   };
   onOpenAcceptedConsole = (invitation) => {
@@ -657,6 +730,7 @@ class Component extends DCLogic {
       dest: 'home',
       stepDir: 'fwd',
       invitationAcceptedId: null,
+      invitationHandoff: null,
       hidden: this.state.hidden.concat([invitation.id]),
       masjidId: managed ? managed.id : this.state.masjidId,
       role: invitation.role,
@@ -676,11 +750,41 @@ class Component extends DCLogic {
       this.after(800, () => { this.hide(confirm.id); this.patch({ deletingId: null }); this.toast('post-deleted', 'Post deleted'); });
       return;
     }
+    if (confirm.kind === 'transferOwnership') {
+      const data = window.buildOpsData(this.state, {});
+      const target = data.members.items.find((m) => m.id === confirm.id);
+      if (!data.me || !data.me.isOwner || !window.OPS_CAPS.isAdmin(data.caps) || !target || target.status !== 'ACTIVE') return;
+      const originMasjid = this.state.masjidId;
+      const originOwner = this.state.ownerId;
+      this.patch({ transferringId: target.id });
+      this.after(700, () => {
+        if (this.state.masjidId !== originMasjid || this.state.ownerId !== originOwner || this.state.transferringId !== target.id) return;
+        this.patch({ ownerId: target.id, transferringId: null,
+          capOverrides: Object.assign({}, this.state.capOverrides, { [target.id]: Array.from(new Set(target.caps.concat(['committee']))) }) });
+        this.toast('ownership-transferred', 'Ownership transferred');
+      });
+      return;
+    }
     if (confirm.kind === 'removeMember') {
-      const member = (window.OPS_MEMBERS || []).find((m) => m.id === confirm.id);
+      const data = window.buildOpsData(this.state, {});
+      const member = data.members.items.find((m) => m.id === confirm.id);
+      if (!member || member.isOwner || (!member.you && (!window.OPS_CAPS.isAdmin(data.caps) || (!data.me.isOwner && window.OPS_CAPS.isAdmin(member.caps))))) return;
       this.hide(confirm.id);
+      if (member.you) {
+        this.patch({ caps: [], consoleStatus: 'locked', dest: 'home', memberId: null, ownerId: null });
+        this.toast('committee-left', 'You left the committee');
+        return;
+      }
       if (this.state.dest === 'member') this.transitionTo({ dest: 'members', memberId: null });
       this.toast('member-removed', `${member ? member.name : 'Member'} removed from the committee`);
+      return;
+    }
+    if (confirm.kind === 'withdrawInvitation') {
+      const data = window.buildOpsData(this.state, {});
+      const target = data.members.items.find((m) => m.id === confirm.id);
+      if (!data.me || !target || !window.OPS_CAPS.isAdmin(data.caps) || (window.OPS_CAPS.isAdmin(target.caps) && !data.me.isOwner)) return;
+      this.patch({ withdrawingId: confirm.id });
+      this.after(700, () => { this.hide(confirm.id); this.patch({ withdrawingId: null }); this.toast('invitation-withdrawn', 'Invitation withdrawn'); });
       return;
     }
     if (confirm.kind === 'declineInvitation') {
@@ -724,7 +828,7 @@ class Component extends DCLogic {
       onToggleMemberMenu: this.onToggleMemberMenu,
       onOpenMember: this.onOpenMember, onPickRole: this.onPickRole,
       onToggleCapability: this.onToggleCapability,
-      onOpenRemove: this.onOpenRemove, onOpenInvite: this.onOpenInvite,
+      onOpenTransfer: this.onOpenTransfer, onOpenRemove: this.onOpenRemove, onWithdrawInvitation: this.onWithdrawInvitation, onOpenInvite: this.onOpenInvite,
       onInvitePhone: this.onInvitePhone, onInviteRole: this.onInviteRole,
       onInviteCapability: this.onInviteCapability, onSendInvite: this.onSendInvite,
       onOpenMenu: this.onOpenMenu,
@@ -739,6 +843,9 @@ class Component extends DCLogic {
       onRemovePhoto: this.onRemovePhoto,
       onAudience: this.onAudience, onAnother: this.onAnother,
       onAccept: this.onAccept, onDecline: this.onDecline,
+      onDetailsName: this.onDetailsName, onDetailsGender: this.onDetailsGender,
+      onDetailsSubmit: this.onDetailsSubmit, onDetailsBack: this.onDetailsBack,
+      onDetailsRetry: this.onDetailsRetry, onDetailsDismiss: this.onDetailsDismiss,
       onOpenAcceptedConsole: this.onOpenAcceptedConsole,
     };
 

@@ -41,6 +41,12 @@ function HomeScreen({
   notifNudge = false,       // signed-in with masjid, notifs off (InlineNudge.NotificationPermission)
   onCloseNotifNudge,
   onAllowNotif,
+  // A committee invitation addressed to THIS user (InlineNudge.CommitteeInvitation). Null when
+  // none is pending. `{ masjid, role, inviter, daysLeft, count }` — count > 1 collapses the
+  // card to a plural summary. No dismiss: the card leaves when the invitation is answered or
+  // lapses, never because it was swiped away and forgotten.
+  inviteNudge = null,
+  onViewInvitation,
   trackingLoading = false,
   managedMasjid = null,      // masjid name when this member manages one → console tile
   managedAttention = 0,
@@ -322,6 +328,25 @@ function HomeScreen({
               ))}
             </div>
           </div>
+
+          {/* Committee-invitation nudge — someone asked this user to help run a masjid
+              (PromptCard.success, NudgeInline.kt CommitteeInvitation). Emerald is the console's
+              own colour: accepting lands them in it. */}
+          {inviteNudge && (
+            <PromptCard
+              variant="success"
+              title={inviteNudge.count > 1
+                ? `You have ${inviteNudge.count} committee invitations`
+                : `You're invited to help run ${inviteNudge.masjid}`}
+              description={inviteNudge.count > 1
+                ? 'Masjids have asked you to join their committees. Each one names the role and what it grants before you accept.'
+                : `${inviteNudge.inviter} asked you to join as ${inviteNudge.role}. Accept within ${inviteNudge.daysLeft} ${inviteNudge.daysLeft === 1 ? 'day' : 'days'} to start managing the masjid.`}
+              primaryActionText={inviteNudge.count > 1 ? 'View invitations' : 'View invitation'}
+              primaryActionIcon="groups_outlined"
+              onPrimaryAction={onViewInvitation}
+              style={{ margin: '0 20px 24px' }}
+            />
+          )}
 
           {/* Guest Login Nudge (PromptCard.error variant from NudgeInline.kt) */}
           {loginNudge && (
@@ -1470,6 +1495,8 @@ function ProfileScreen({
   showManagedMasjid = false,
   managedCount = 1,          // how many masjids this member manages (the console switches between them)
   managedAttention = 0,      // things waiting inside the console (suggestions, unaccepted invites)
+  pendingInvitations = 0,    // committee invitations addressed to THIS user; the row exists only above zero
+  onViewInvitations,
   onMyMasjids,             // tap the My Masjids row → open My Masjids sheet (masjid-register board)
   onManageMasjid,
   adminTransitionEnabled = false,
@@ -1493,13 +1520,20 @@ function ProfileScreen({
     </div>
   );
 
+  // An invitation the user has not answered sits with the masjid rows — it is a masjid asking for
+  // them — between the masjid they follow and the one they might register. Hidden at zero: an
+  // empty "Pending Invitations · 0" row is a promise of mail that never comes.
+  const invitationRow = pendingInvitations > 0
+    ? [{ icon: 'mail', label: 'Pending Invitations', value: String(pendingInvitations), onClick: onViewInvitations }]
+    : [];
   const cards = [
     showMyMasjids && onMyMasjids
       ? [
           { icon: 'mosque', label: 'My Masjids', value: masjidName, onClick: onMyMasjids },
+          ...invitationRow,
           { icon: 'add', label: 'Register a Masjid', onClick: onRegister }
         ]
-      : [{ icon: 'add', label: 'Register a Masjid', onClick: onRegister }],
+      : [...invitationRow, { icon: 'add', label: 'Register a Masjid', onClick: onRegister }],
     [
       { icon: 'groups_outlined', label: 'Invite your Friends', onClick: onInvite },
       { icon: 'check_circle', label: 'Approve Friends', onClick: onApprove }

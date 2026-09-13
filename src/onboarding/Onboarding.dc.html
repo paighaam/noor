@@ -234,7 +234,7 @@ class Component extends DCLogic {
     setTimeout(() => {
       if (ok) {
         this.setState({ verifying: false, success: true });
-        setTimeout(() => { window.location.href = '../home/Home Screen.dc.html'; }, 900);
+        setTimeout(() => { window.location.href = '../home/Home Broadcast Studio.dc.html'; }, 900);
       } else {
         this.setState({ verifying: false, otpError: true, smsVisible: true });
       }

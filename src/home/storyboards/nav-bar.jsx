@@ -1,6 +1,6 @@
 // Shared bottom nav bar — single source for the app tab list + markup.
-// Used by BOTH the live interactive device (Home Screen.dc.html, via <x-import>)
-// and every static storyboard frame (tabs-row.jsx renders <BottomNav/> directly).
+// Used by BOTH the live interactive device (Home Broadcast Studio.dc.html, via <x-import>)
+// and every static storyboard frame (the Home and nudge rows render <BottomNav/> directly).
 // Styling comes from the shared `.nb-bar` / `.nb-item` kit in _theme/components.css.
 //
 // Props:

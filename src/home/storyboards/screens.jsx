@@ -1,5 +1,5 @@
 // Shared screen components for the Home Flow Section Board.
-// These are used by both the static storyboard frames (tabs-row.jsx) and the live interactive device (Home Screen.dc.html).
+// These are used by both the static storyboard frames and the live interactive Home Broadcast Studio board.
 
 // 1. HOME SCREEN
 function HomeScreen({
@@ -146,34 +146,35 @@ function HomeScreen({
       </div>
 
       {/* Fixed hero — time + Suhoor/Iftaar flank it. Stays put; only the sheet scrolls over it. */}
-      <div style={{ position: 'absolute', top: 98, left: 0, right: 0, height: 200, zIndex: 1, pointerEvents: 'none' }}>
+      <div style={{ position: 'absolute', top: 98, left: 0, right: 0, height: 152, zIndex: 1, pointerEvents: 'none' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(22,18,28,0.3) 100%)' }} />
 
-        <div style={{ position: 'absolute', left: 0, right: 0, top: 24, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, pointerEvents: 'auto' }}>
+        {/* Share one row between the prayer heading and both icons; labels sit below. */}
+        <div style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 26, padding: '0 16px', display: 'grid', gridTemplateColumns: '49px minmax(0, 1fr) 49px', gridTemplateRows: 'auto 49px auto', alignContent: 'center', alignItems: 'center', columnGap: 8, rowGap: 5, pointerEvents: 'auto' }}>
           {/* Suhoor — beside the time */}
-          <div onClick={onSuhoorTap} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', flexShrink: 0 }}>
-            <div style={{ width: 46, height: 46, borderRadius: '50%', background: suhoorBg, backdropFilter: 'blur(10px)', border: suhoorBorder, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 200ms, border 200ms' }}>
+          <div onClick={onSuhoorTap} style={{ display: 'contents', cursor: 'pointer' }}>
+            <div style={{ gridColumn: 1, gridRow: 2, width: 46, height: 46, borderRadius: '50%', background: suhoorBg, backdropFilter: 'blur(10px)', border: suhoorBorder, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 200ms, border 200ms' }}>
               <span className="mi" style={{ fontSize: 20, color: theme.flankerIconColor }} data-i="wb_sunny"></span>
             </div>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ gridColumn: 1, gridRow: 3, textAlign: 'center' }}>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, color: theme.flankerTextColor }}>Suhoor</div>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, color: theme.flankerTimeColor }}>4:31 AM</div>
             </div>
           </div>
 
           {/* Time (center) */}
-          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, color: theme.textColorSecondary, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Azan: {activePrayer.azan}</div>
-            <div style={{ fontFamily: 'var(--font-title)', fontSize: 42, color: theme.textColorPrimary, lineHeight: 1, letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>{activePrayer.name} {activePrayer.iqama}</div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: theme.textColorTertiary, marginTop: 5 }}>{activePrayer.range}</div>
+          <div style={{ display: 'contents' }}>
+            <div style={{ fontFamily: 'var(--font-body)', gridColumn: 2, gridRow: 1, textAlign: 'center', fontSize: 11, fontWeight: 600, color: theme.textColorSecondary, letterSpacing: '.08em', textTransform: 'uppercase' }}>Azan: {activePrayer.azan}</div>
+            <div style={{ gridColumn: 2, gridRow: 2, textAlign: 'center', minWidth: 0, fontFamily: 'var(--font-title)', fontSize: 'var(--title-h2-size)', color: theme.textColorPrimary, lineHeight: 'var(--title-h2-lh)', letterSpacing: 'var(--title-h2-tracking)', whiteSpace: 'nowrap' }}>{activePrayer.name} {activePrayer.iqama}</div>
+            <div style={{ fontFamily: 'var(--font-body)', gridColumn: 2, gridRow: 3, textAlign: 'center', fontSize: 12, color: theme.textColorTertiary }}>{activePrayer.range}</div>
           </div>
 
           {/* Iftaar — beside the time */}
-          <div onClick={onIftaarTap} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', flexShrink: 0 }}>
-            <div style={{ width: 46, height: 46, borderRadius: '50%', background: iftaarBg, backdropFilter: 'blur(10px)', border: iftaarBorder, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 200ms, border 200ms' }}>
+          <div onClick={onIftaarTap} style={{ display: 'contents', cursor: 'pointer' }}>
+            <div style={{ gridColumn: 3, gridRow: 2, width: 46, height: 46, borderRadius: '50%', background: iftaarBg, backdropFilter: 'blur(10px)', border: iftaarBorder, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 200ms, border 200ms' }}>
               <span className="mi" style={{ fontSize: 20, color: theme.flankerIconColor }} data-i="bedtime"></span>
             </div>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ gridColumn: 3, gridRow: 3, textAlign: 'center' }}>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, color: theme.flankerTextColor }}>Iftaar</div>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, color: theme.flankerTimeColor }}>At Azan</div>
             </div>
@@ -184,7 +185,7 @@ function HomeScreen({
       {/* Scroll layer — only the sheet scrolls; it rises over the fixed hero */}
       <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 80, zIndex: 2, boxSizing: 'border-box' }}>
         {/* Transparent spacer keeps the sheet below the hero at rest (clicks pass through to Suhoor/Iftaar) */}
-        <div style={{ height: 272, flexShrink: 0, pointerEvents: 'none' }} />
+        <div style={{ height: 224, flexShrink: 0, pointerEvents: 'none' }} />
 
         {/* Sheet card — scrolls up over the fixed hero */}
         <div style={{ position: 'relative', pointerEvents: 'auto', background: 'color-mix(in oklab, var(--color-surface-card) 82%, transparent)', backdropFilter: 'blur(28px) saturate(180%)', WebkitBackdropFilter: 'blur(28px) saturate(180%)', borderRadius: '24px 24px 0 0', paddingBottom: 32 }}>

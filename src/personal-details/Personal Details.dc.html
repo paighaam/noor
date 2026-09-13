@@ -21,7 +21,6 @@
     @keyframes stepin { from{transform:translateX(28px);opacity:0} to{transform:translateX(0);opacity:1} }
     @keyframes stepback { from{transform:translateX(-28px);opacity:0} to{transform:translateX(0);opacity:1} }
     @keyframes confettidrift { 0%{transform:translateY(-8px) rotate(0deg);opacity:0} 12%{opacity:1} 100%{transform:translateY(18px) rotate(320deg);opacity:0} }
-    @keyframes ptshake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
     .step-fwd { animation:stepin var(--motion-emphasized) var(--ease-out) }
     .step-back { animation:stepback var(--motion-standard) var(--ease-out) }
   </style>
@@ -150,7 +149,7 @@ class Component extends DCLogic {
     setTimeout(this.completeSetup, 0);
   };
   dismissError = () => this.setState({ serviceError: false, loading: false, submitStatus: null });
-  continueHome = () => { window.location.href = '../home/Home Screen.dc.html'; };
+  continueHome = () => { window.location.href = '../home/Home Broadcast Studio.dc.html'; };
 
   goBack = () => {
     if (this.state.stage === 'success') { this.setState({ stage: 'details', stepDir: 'back' }); return; }

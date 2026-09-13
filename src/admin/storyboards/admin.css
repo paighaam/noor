@@ -1,675 +1,123 @@
 /* ============================================================
-   Noor Admin Console & Masjid Approvals Stylesheet
-   Strict adherence to semantic tokens: --color-*, --font-*,
-   --size-*, --radius-*, --shadow-*, --motion-*.
-   Zero raw --noor-* primitives. Zero hardcoded hex.
+   Admin Console — feature marks only.
+   Component constructions come from _theme/components.css (.app-bar, .list-group,
+   .list-item, .badge, .surf, .summary-hero, .deck, .media-tile, .docked-action,
+   .status-capsule, .snack, .opt-row …). This file adds the identity header, the
+   signups card and its bars, the photo pair, the record rows and the two-up footer.
+   Semantic tokens only — no --noor-* primitives, no palette hex.
    ============================================================ */
 
-.adm-screen {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--color-surface-primary);
-  color: var(--color-info-primary);
-  font-family: var(--font-body);
-  overflow: hidden;
-  position: relative;
-  box-sizing: border-box;
-}
-
-.adm-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--size-md);
-  padding: var(--size-md);
-  background: color-mix(in oklab, var(--color-surface-primary) 90%, transparent);
-  border-bottom: 1px solid var(--color-neutral-border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-sizing: border-box;
-  flex-shrink: 0;
-  z-index: 10;
-}
-
-.adm-bar-content {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.adm-bar-title {
-  font-family: var(--font-title);
-  font-size: var(--body-lg-size);
-  font-weight: 800;
-  color: var(--color-info-primary);
-  line-height: 1.2;
-}
-
-.adm-bar-sub {
-  font-size: var(--body-xs-size);
-  color: var(--color-info-secondary);
-  line-height: 1.2;
-}
-
-.adm-bar-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-circle);
-  background: color-mix(in oklab, var(--color-info-primary) 8%, transparent);
-  color: var(--color-info-primary);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.adm-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--size-md) var(--size-md) calc(var(--size-2xl) + 64px);
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-md);
-  box-sizing: border-box;
-}
-
-/* ── Hero / Top Header ── */
-.adm-hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--size-md) var(--size-md);
-  background: color-mix(in oklab, var(--color-action-primary) 8%, var(--color-surface-card));
-  border: 1px solid color-mix(in oklab, var(--color-action-primary) 22%, var(--color-neutral-border));
-  border-radius: var(--radius-2xl);
-  margin-bottom: var(--size-xs);
-}
-
-.adm-hero-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-xl);
-  background: var(--color-action-primary);
-  color: var(--color-action-primary-inverse);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: var(--body-md-size);
-  flex-shrink: 0;
-}
-
-.adm-hero-info {
-  flex: 1;
-  margin-left: var(--size-md);
-  min-width: 0;
-}
-
-.adm-hero-name {
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: var(--body-md-size);
-  line-height: var(--body-md-lh);
-  color: var(--color-info-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.adm-hero-role {
-  font-size: var(--body-xs-size);
-  line-height: var(--body-xs-lh);
-  color: var(--color-action-primary);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: var(--size-xs);
-}
-
-/* ── Stats Grid ── */
-.adm-stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--size-sm);
-  margin-bottom: var(--size-xs);
-}
-
-.adm-stat-pill {
-  display: flex;
-  flex-direction: column;
-  padding: var(--size-md) var(--size-sm);
-  background: var(--color-surface-card);
-  border: 1px solid var(--color-neutral-border);
-  border-radius: var(--radius-xl);
-  text-align: center;
-}
-
-.adm-stat-num {
-  font-family: var(--font-title);
-  font-size: var(--title-h2-size);
-  line-height: 1.1;
-  font-weight: 800;
-  color: var(--color-info-primary);
-}
-
-.adm-stat-num.urgent {
-  color: var(--color-status-warning);
-}
-
-.adm-stat-lbl {
-  font-size: 10px;
-  line-height: 1.2;
-  color: var(--color-info-secondary);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-top: var(--size-xs);
-}
-
-/* ── Urgent Queue Action Banner ── */
-.adm-urgent-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--size-md);
-  background: color-mix(in oklab, var(--color-status-warning) 12%, var(--color-surface-card));
-  border: 1px solid color-mix(in oklab, var(--color-status-warning) 36%, transparent);
-  border-radius: var(--radius-xl);
-  cursor: pointer;
-  transition: transform var(--motion-press) var(--ease-out);
-}
-
-.adm-urgent-banner:active {
-  transform: scale(0.98);
-}
-
-.adm-urgent-left {
-  display: flex;
-  align-items: center;
-  gap: var(--size-md);
-  min-width: 0;
-}
-
-.adm-urgent-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-lg);
-  background: var(--color-status-warning);
-  color: var(--color-info-primary-inverse);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 18px;
-}
-
-.adm-urgent-title {
-  font-weight: 700;
-  font-size: var(--body-sm-size);
-  color: var(--color-info-primary);
-}
-
-.adm-urgent-sub {
-  font-size: var(--body-xs-size);
-  color: var(--color-info-secondary);
-  margin-top: 2px;
-}
-
-.adm-badge-count {
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--color-status-warning);
-  color: var(--color-info-primary-inverse);
-  font-size: var(--body-xs-size);
-  font-weight: 700;
-}
-
-/* ── Console Quick Action Tiles ── */
-.adm-section-title {
-  font-family: var(--font-title);
-  font-size: var(--body-sm-size);
-  font-weight: 700;
-  color: var(--color-info-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: var(--size-sm);
-  margin-bottom: var(--size-xs);
-  padding-left: var(--size-xs);
-}
-
-.adm-actions-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--size-sm);
-}
-
-.adm-action-tile {
-  display: flex;
-  flex-direction: column;
-  padding: var(--size-md);
-  background: var(--color-surface-card);
-  border: 1px solid var(--color-neutral-border);
-  border-radius: var(--radius-2xl);
-  cursor: pointer;
-  transition: transform var(--motion-press) var(--ease-out), border-color var(--motion-quick) var(--ease-out);
-  text-align: left;
-}
-
-.adm-action-tile:active {
-  transform: scale(0.98);
-  background: var(--color-surface-secondary);
-}
-
-.adm-action-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-xl);
-  background: color-mix(in oklab, var(--color-action-primary) 12%, transparent);
-  color: var(--color-action-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  margin-bottom: var(--size-md);
-}
-
-.adm-action-title {
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: var(--body-sm-size);
-  color: var(--color-info-primary);
-}
-
-.adm-action-meta {
-  font-size: var(--body-xs-size);
-  color: var(--color-info-secondary);
-  margin-top: 2px;
-}
-
-/* ── Approvals Queue & Lead Cards ── */
-.adm-queue-filters {
-  display: flex;
-  gap: var(--size-xs);
-  overflow-x: auto;
-  padding-bottom: var(--size-xs);
-  margin-bottom: var(--size-xs);
-}
-
-.adm-lead-card {
-  display: flex;
-  flex-direction: column;
-  padding: var(--size-md);
-  background: var(--color-surface-card);
-  border: 1px solid var(--color-neutral-border);
-  border-radius: var(--radius-2xl);
-  cursor: pointer;
-  transition: transform var(--motion-press) var(--ease-out), border-color var(--motion-quick) var(--ease-out);
-}
-
-.adm-lead-card:active {
-  transform: scale(0.99);
-}
-
-.adm-lead-card.claimed {
-  border-color: color-mix(in oklab, var(--color-action-primary) 36%, var(--color-neutral-border));
-  background: color-mix(in oklab, var(--color-action-primary) 3%, var(--color-surface-card));
-}
-
-.adm-lead-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--size-sm);
-}
-
-.adm-lead-title {
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: var(--body-md-size);
-  line-height: 1.3;
-  color: var(--color-info-primary);
-}
-
-.adm-claim-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in oklab, var(--color-action-primary) 14%, transparent);
-  color: var(--color-action-primary);
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.adm-lead-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--size-sm);
-  font-size: var(--body-xs-size);
-  color: var(--color-info-secondary);
-  margin-top: var(--size-xs);
-}
-
-.adm-lead-submitter {
-  margin-top: var(--size-sm);
-  padding-top: var(--size-sm);
-  border-top: 1px solid var(--color-neutral-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--body-xs-size);
-}
-
-.adm-lead-contact {
-  display: flex;
-  align-items: center;
-  gap: var(--size-xs);
-  color: var(--color-info-primary);
-  font-weight: 600;
-}
-
-/* ── Claimed Review & Field Comparison Layout ── */
-.adm-claimed-banner {
-  display: flex;
-  flex-direction: column;
-  padding: var(--size-md);
-  border-radius: var(--radius-2xl);
-  background: color-mix(in oklab, var(--color-action-primary) 8%, var(--color-surface-card));
-  border: 1px solid color-mix(in oklab, var(--color-action-primary) 24%, var(--color-neutral-border));
-}
-
-.adm-diff-counter {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--size-xs);
-  padding: 3px 10px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in oklab, var(--color-status-warning) 16%, transparent);
-  color: var(--color-status-warning);
-  font-size: var(--body-xs-size);
-  font-weight: 700;
-  align-self: flex-start;
-  margin-bottom: var(--size-xs);
-}
-
-.adm-diff-card {
-  display: flex;
-  flex-direction: column;
-  padding: var(--size-md);
-  background: var(--color-surface-card);
-  border: 1px solid var(--color-neutral-border);
-  border-radius: var(--radius-2xl);
-  gap: var(--size-sm);
-}
-
-.adm-diff-card.has-conflict {
-  border-color: color-mix(in oklab, var(--color-status-warning) 40%, var(--color-neutral-border));
-}
-
-.adm-diff-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.adm-diff-field-name {
-  font-family: var(--font-title);
-  font-size: var(--body-sm-size);
-  font-weight: 700;
-  color: var(--color-info-primary);
-}
-
-.adm-diff-status-pill {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: var(--radius-pill);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.adm-diff-status-pill.diff {
-  background: color-mix(in oklab, var(--color-status-warning) 16%, transparent);
-  color: var(--color-status-warning);
-}
-
-.adm-diff-status-pill.same {
-  background: color-mix(in oklab, var(--color-status-success) 16%, transparent);
-  color: var(--color-status-success);
-}
-
-/* 2-Column Pick Option Grid */
-.adm-diff-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--size-sm);
-}
-
-.adm-diff-opt {
-  display: flex;
-  flex-direction: column;
-  padding: var(--size-sm) var(--size-md);
-  border: 1.5px solid var(--color-neutral-border);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface-primary);
-  cursor: pointer;
-  transition: all var(--motion-quick) var(--ease-out);
-  position: relative;
-}
-
-.adm-diff-opt.selected {
-  border-color: var(--color-action-primary);
-  background: color-mix(in oklab, var(--color-action-primary) 8%, var(--color-surface-card));
-}
-
-.adm-diff-opt-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--size-xs);
-}
-
-.adm-diff-opt-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-info-secondary);
-}
-
-.adm-diff-opt.selected .adm-diff-opt-label {
-  color: var(--color-action-primary);
-}
-
-.adm-diff-opt-radio {
-  width: 14px;
-  height: 14px;
-  border-radius: var(--radius-circle);
-  border: 1.5px solid var(--color-info-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.adm-diff-opt.selected .adm-diff-opt-radio {
-  border-color: var(--color-action-primary);
-  background: var(--color-action-primary);
-}
-
-.adm-diff-opt-radio-inner {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-circle);
-  background: var(--color-action-primary-inverse);
-}
-
-.adm-diff-opt-val {
-  font-size: var(--body-xs-size);
-  line-height: 1.35;
-  font-weight: 600;
-  color: var(--color-info-primary);
-  word-break: break-word;
-}
-
-/* ── Live Composite Summary Preview ── */
-.adm-composite-card {
-  display: flex;
-  flex-direction: column;
-  padding: var(--size-md);
-  background: color-mix(in oklab, var(--color-action-primary) 6%, var(--color-surface-card));
-  border: 1px dashed var(--color-action-primary);
-  border-radius: var(--radius-2xl);
-  gap: var(--size-xs);
-}
-
-.adm-composite-title {
-  font-family: var(--font-title);
-  font-size: var(--body-xs-size);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-action-primary);
-  margin-bottom: 2px;
-}
-
-.adm-composite-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--body-xs-size);
-  padding: 3px 0;
-  border-bottom: 1px dotted var(--color-neutral-border);
-}
-
-.adm-composite-row:last-child {
-  border-bottom: 0;
-}
-
-.adm-composite-key {
-  color: var(--color-info-secondary);
-}
-
-.adm-composite-val {
-  font-weight: 600;
-  color: var(--color-info-primary);
-  text-align: right;
-  max-width: 60%;
-}
-
-/* ── Attached Photos Preview ── */
-.adm-media-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--size-sm);
-  margin-top: var(--size-xs);
-}
-
-.adm-media-card {
-  display: flex;
-  flex-direction: column;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  border: 1px solid var(--color-neutral-border);
-  background: var(--color-surface-card);
-  cursor: pointer;
-}
-
-.adm-media-img {
-  width: 100%;
-  height: 110px;
-  object-fit: cover;
-  background: var(--color-surface-secondary);
-}
-
-.adm-media-caption {
-  padding: var(--size-xs) var(--size-sm);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-info-secondary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* ── Docked Bottom Action Bar ── */
-.adm-docked-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: var(--size-md);
-  background: color-mix(in oklab, var(--color-surface-primary) 92%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid var(--color-neutral-border);
-  display: flex;
-  gap: var(--size-md);
-  box-sizing: border-box;
-  z-index: 10;
-}
-
-.adm-docked-bar .btn {
-  flex: 1;
-}
-
-/* ── Modal / Rejection Sheet Overlay ── */
-.adm-sheet-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.adm-sheet-content {
-  background: var(--color-surface-card);
-  border-top-left-radius: var(--radius-2xl);
-  border-top-right-radius: var(--radius-2xl);
-  padding: var(--size-lg) var(--size-md) var(--size-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-md);
-  max-height: 85%;
-  overflow-y: auto;
-}
-
-.adm-sheet-title {
-  font-family: var(--font-title);
-  font-size: var(--title-h3-size);
-  font-weight: 700;
-  color: var(--color-info-primary);
-}
-
-.adm-reason-item {
-  display: flex;
-  align-items: center;
-  gap: var(--size-sm);
-  padding: var(--size-md);
-  border: 1px solid var(--color-neutral-border);
-  border-radius: var(--radius-xl);
-  font-size: var(--body-sm-size);
-  color: var(--color-info-primary);
-  cursor: pointer;
-  transition: background var(--motion-quick) var(--ease-out);
-}
-
-.adm-reason-item:active {
-  background: var(--color-surface-secondary);
-}
-
-.adm-reason-item.selected {
-  border-color: var(--color-status-error);
-  background: color-mix(in oklab, var(--color-status-error) 8%, var(--color-surface-card));
-  color: var(--color-status-error);
-  font-weight: 600;
-}
+/* The shell takes the console's faint action tint at the top so the identity header sits on
+   something, and fades to the page surface where the content starts. */
+.adm-hub{
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab,var(--color-action-primary) 6%,var(--color-surface-primary)),
+      var(--color-surface-primary) 26%) !important;
+}
+.adm-shell .screen-title,
+.adm-shell .ab-title{font-family:var(--font-body);font-weight:800;letter-spacing:-.025em}
+.adm-body{scrollbar-gutter:stable}
+.adm-shell button:focus-visible,.adm-shell a:focus-visible{outline:2px solid var(--color-action-primary);outline-offset:2px}
+
+/* ── Identity header (hub) ── */
+.adm-head{display:flex;align-items:center;gap:var(--size-lg);padding-bottom:var(--size-xl)}
+.adm-head-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.adm-head-role{display:flex;align-items:center;gap:var(--size-xs);font-size:12px;color:var(--color-info-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-head-role .mi{flex-shrink:0;font-size:14px;color:var(--color-action-primary)}
+
+.adm-quiet{display:flex;align-items:center;gap:var(--size-md);padding:var(--size-lg) var(--size-xs);font-size:13px;color:var(--color-info-secondary)}
+.adm-quiet .mi{font-size:18px;color:var(--color-action-primary)}
+
+.adm-section{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.adm-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--size-lg)}
+.adm-section-head strong{font-size:17px;line-height:22px;font-weight:800;letter-spacing:-.02em}
+.adm-section-head small{font-size:10.5px;color:var(--color-info-secondary)}
+.adm-section-label{display:flex;flex-direction:column;gap:2px;padding:var(--size-max) 4px var(--size-lg)}
+.adm-section-label small{font-size:11.5px;line-height:1.45;color:var(--color-info-secondary)}
+.adm-foot{margin:var(--size-lg) 4px 0;font-size:11px;line-height:1.5;color:var(--color-info-tertiary)}
+
+/* ── Signups card ── */
+.adm-growth{display:flex;flex-direction:column;gap:12px;width:100%;padding:16px;text-align:left;cursor:pointer;font:inherit;color:inherit;border-radius:var(--radius-card);border-color:var(--color-neutral-border);background:var(--gradient-emerald),var(--color-surface-card);box-shadow:var(--shadow-card);transition:transform var(--motion-press) var(--ease-out)}
+.adm-growth:active{transform:scale(.995)}
+.adm-growth-head{display:flex;align-items:center;justify-content:space-between}
+.adm-growth-head .eyebrow{display:inline-flex;align-items:center;gap:6px}
+.adm-growth-head .eyebrow .mi{font-size:15px}
+.adm-growth-head>.mi{font-size:20px;color:var(--color-info-faint)}
+.adm-growth-hero{display:flex;flex-direction:column;gap:2px}
+/* The one hero figure: proportional figures at display size, the same sans as everything else. */
+.adm-growth-value{font-family:var(--font-body);font-size:38px;line-height:1;font-weight:850;letter-spacing:-.035em;color:var(--color-info-primary)}
+.adm-growth-caption{font-size:12px;color:var(--color-info-secondary)}
+.adm-growth .manage-entry-stats{gap:var(--size-md)}
+.adm-growth .manage-entry-stat-value{font-size:17px}
+
+.adm-stat-hero{display:flex;flex-direction:column;gap:4px;padding:6px 4px 4px}
+.adm-chart{padding:14px 12px 10px;border-color:var(--color-neutral-border);border-radius:var(--radius-card);background:var(--color-surface-card)}
+
+/* ── Bars — one series, one hue. Current bucket in the accent, the rest the lighter step. ── */
+.adm-bars{display:flex;flex-direction:column;gap:6px;width:100%}
+.adm-bars-plot{display:flex;align-items:flex-end;gap:6px;width:100%}
+.adm-bars.dense .adm-bars-plot{gap:2px}
+.adm-bar-col{position:relative;flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:4px;padding:0;border:0;background:transparent;cursor:pointer;font:inherit;color:inherit}
+.adm-bar{display:block;width:100%;min-height:3px;border-radius:4px 4px 0 0;background:color-mix(in oklab,var(--color-action-primary) 38%,var(--color-surface-card));transition:background var(--motion-quick) var(--ease-out)}
+.adm-bar-col.is-now .adm-bar{background:var(--color-action-primary)}
+.adm-bar-col.is-pick .adm-bar{background:color-mix(in oklab,var(--color-action-primary) 70%,var(--color-info-primary))}
+.adm-bar-label{font-size:10px;font-weight:700;line-height:1;text-align:center;color:var(--color-info-secondary);font-variant-numeric:tabular-nums}
+.adm-bar-col.is-now .adm-bar-label{color:var(--color-info-primary)}
+.adm-bar-tip{position:absolute;left:50%;bottom:100%;z-index:3;transform:translateX(-50%);margin-bottom:6px;gap:6px;padding:6px 10px;font-size:11px}
+.adm-bar-tip span{font-weight:500;color:var(--color-info-secondary)}
+.adm-bar-col:first-child .adm-bar-tip{left:0;transform:none}
+.adm-bar-col:last-child .adm-bar-tip{left:auto;right:0;transform:none}
+.adm-bars-axis{display:flex;gap:6px;width:100%}
+.adm-bars.dense .adm-bars-axis{gap:2px}
+.adm-bars-axis span{flex:1;min-width:0;overflow:hidden;font-size:10px;line-height:1;text-align:center;color:var(--color-info-tertiary);font-variant-numeric:tabular-nums}
+.adm-bars.compact .adm-bars-axis span{font-size:9px}
+.adm-bars-unit{padding-top:2px;font-size:10.5px;text-align:right;color:var(--color-info-tertiary)}
+
+/* Onboarding meter: the fill carries the share, the track is a lighter step of the same hue. */
+.adm-meter{display:block;width:100%;height:6px;overflow:hidden;border-radius:var(--radius-circle);background:color-mix(in oklab,var(--color-action-primary) 14%,var(--color-surface-card))}
+.adm-meter>span{display:block;height:100%;border-radius:inherit;background:var(--color-action-primary)}
+
+/* ── Lead review ── */
+.adm-lead-body{display:flex;flex-direction:column;gap:12px;padding:0 16px}
+.adm-lead-body>.adm-section-label{padding-bottom:var(--size-sm)}
+.adm-hero-code{font-family:var(--font-body);font-size:11px;font-variant-numeric:tabular-nums;letter-spacing:.06em;color:color-mix(in oklab,var(--color-neutral-white) 84%,transparent)}
+.adm-person{display:flex;align-items:center;gap:var(--size-lg);padding:14px;border-color:var(--color-neutral-border);border-radius:var(--radius-card);background:var(--color-surface-card)}
+.adm-person-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.adm-person-copy strong{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-person-copy span{font-size:12px;color:var(--color-info-secondary)}
+.adm-note{display:flex;align-items:flex-start;gap:var(--size-md);padding:var(--size-lg) var(--size-xl);border-radius:var(--radius-2xl);background:var(--color-surface-secondary);font-size:12px;line-height:1.5;color:var(--color-info-secondary)}
+.adm-note .mi{flex-shrink:0;margin-top:1px;font-size:16px;color:var(--color-info-secondary)}
+.adm-photos{display:grid;grid-template-columns:1fr 1fr;gap:var(--size-md)}
+.adm-photos .media-tile{height:132px}
+.adm-photo-missing{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--size-md);height:132px;box-sizing:border-box;border:1px dashed var(--color-neutral-border);border-radius:var(--radius-2xl);background:var(--color-surface-secondary);font-size:12px;font-weight:600;color:var(--color-info-secondary)}
+.adm-photo-missing .mi{font-size:24px;color:var(--color-info-faint)}
+.adm-photo-missing.is-warn{border-color:color-mix(in oklab,var(--color-status-warning) 50%,transparent);color:var(--color-status-warning)}
+.adm-photo-missing.is-warn .mi{color:var(--color-status-warning)}
+.adm-mono{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.summary-hero.adm-rejected{border-color:color-mix(in oklab,var(--color-status-error) 35%,transparent);background:color-mix(in oklab,var(--color-status-error) 6%,var(--color-surface-card))}
+.summary-hero.adm-rejected .icon-tile{background:color-mix(in oklab,var(--color-status-error) 12%,transparent);color:var(--color-status-error)}
+
+.adm-viewer{display:flex;flex:1;min-height:0;flex-direction:column;justify-content:center;gap:var(--size-lg)}
+.adm-viewer img{width:100%;max-height:70%;object-fit:contain;border-radius:var(--radius-card)}
+.adm-viewer-caption{display:flex;flex-direction:column;gap:2px;text-align:center;color:var(--color-neutral-white)}
+.adm-viewer-caption strong{font-size:15px;font-weight:700}
+.adm-viewer-caption span{font-size:12px;color:color-mix(in oklab,var(--color-neutral-white) 72%,transparent)}
+
+/* Two-up docked footer: the dismissing action left, the affirmative right. */
+.adm-two-up{display:flex;gap:var(--size-lg)}
+.adm-two-up>.btn{flex:1}
+.adm-two-up>.btn-filled{flex:1.4}
+
+/* Reject sheet: the .opt-sheet preset lays its body out as a row for a bare list; here the body
+   holds the bounded reason list AND the destructive pair, so it stacks. */
+.adm-reject .dlg-body{flex-direction:column;min-height:0}
+.adm-reject .opt-list{flex:1;min-height:0;max-height:320px}
+.adm-reject .dlg-actions{flex-shrink:0;margin-top:var(--size-xl)}
+
+/* ── Moderation ── */
+.adm-feed{border:1px solid var(--color-neutral-border);border-radius:var(--radius-card);background:var(--color-surface-card);box-shadow:var(--shadow-card);overflow:hidden}
+.adm-post-tap{cursor:pointer;transition:background var(--motion-quick) var(--ease-out)}
+.adm-post-tap:active{background:color-mix(in oklab,var(--color-action-primary) 6%,var(--color-surface-card))}
+.adm-post-photos{display:grid;grid-template-columns:1fr;gap:var(--size-md);margin:var(--size-md) 0 var(--size-lg)}
+.adm-post-photos img{width:100%;height:160px;object-fit:cover;border-radius:var(--radius-2xl)}

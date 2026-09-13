@@ -176,7 +176,7 @@ class Component extends DCLogic {
     if (idx === 0) { this.setState({ stage: 'home', stepDir: 'back', settingsOpen: false }); return; }
     if (idx === 2) { this.setState({ stage: 'listing', stepDir: 'fwd', settingsOpen: false }); return; }
     const hash = idx === 1 ? '#qaum' : idx === 3 ? '#salaah' : '#profile';
-    window.location.href = 'home/Home Screen.dc.html' + hash;
+    window.location.href = 'home/Home Broadcast Studio.dc.html' + hash;
   };
 
   _transitionReader = (update, fallbackDirection) => {

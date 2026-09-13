@@ -1,27 +1,26 @@
-// Admin Console — Storyboard frame renderer.
+// Admin Console — storyboard rows.
 //
-// Renders static storyboard rows grouped by feature flow, mapping each frame
-// to the exact screen component and state builder used by the live interactive device.
+// Every frame is rendered by the SAME screen component and the SAME `buildAdminData` assembly
+// the live device uses (see ./admin-state.js), so a static frame can never drift from the
+// prototype. Tapping a frame hands its state to the device.
 
 (function () {
   const ADMIN_SCREEN_FOR = {
-    home: 'AdminHomeScreen',
-    queue: 'AdminQueueScreen',
-    'standard-review': 'StandardReviewScreen',
-    'claimed-review': 'ClaimedReviewScreen',
+    hub: 'AdminHubScreen',
+    invalid: 'AdminInvalidScreen',
+    signups: 'AdminSignupsScreen',
+    approvals: 'AdminApprovalsScreen',
+    lead: 'AdminLeadScreen',
+    moderation: 'AdminModerationScreen',
+    post: 'AdminPostScreen',
   };
 
   function AdminFrame({ frame, index, active, onSelectFrame }) {
     const Screen = window[ADMIN_SCREEN_FOR[frame.screen]];
-    const rawState = window.adminFrameState ? window.adminFrameState(frame) : {};
-    const data = window.buildAdminData ? window.buildAdminData(rawState, {}) : {};
-
+    const data = window.buildAdminData ? window.buildAdminData(window.adminFrameState(frame), {}) : {};
     return (
       <div className="poc-board-item" onClick={() => onSelectFrame && onSelectFrame(index)}>
-        <div
-          className={`noor-frame ${active === index ? 'is-active' : ''}`}
-          style={{ '--s': '0.46', cursor: 'pointer' }}
-        >
+        <div className={`noor-frame ${active === index ? 'is-active' : ''}`} style={{ '--s': '0.46', cursor: 'pointer' }}>
           <div className="noor-frame-inner">
             <div className="noor-screen">
               <div className="noor-island"></div>
@@ -30,9 +29,7 @@
             </div>
           </div>
         </div>
-        <div className="poc-frame-caption">
-          {index + 1} · {frame.name}
-        </div>
+        <div className="poc-frame-caption">{index + 1} · {frame.name}</div>
       </div>
     );
   }
@@ -40,7 +37,6 @@
   function AdminBoard({ active = -1, onSelectFrame }) {
     const frames = window.ADMIN_FRAMES || [];
     const groups = window.ADMIN_GROUPS || [];
-
     return (
       <div>
         {groups.map((group) => {
@@ -56,13 +52,7 @@
               </div>
               <div className="poc-board">
                 {rows.map((item) => (
-                  <AdminFrame
-                    key={item.index}
-                    frame={item.frame}
-                    index={item.index}
-                    active={active}
-                    onSelectFrame={onSelectFrame}
-                  />
+                  <AdminFrame key={item.index} frame={item.frame} index={item.index} active={active} onSelectFrame={onSelectFrame} />
                 ))}
               </div>
             </div>
@@ -73,4 +63,4 @@
   }
 
   Object.assign(window, { AdminBoard });
-})();
+}());

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="../support.js"></script>
 <script src="../_theme/chrome.js"></script>
+<!-- Shared state model + storyboard frame table. Plain JS in <head> so it is ready
+     before the page logic below constructs its initial state. -->
 <script src="./storyboards/admin-state.js"></script>
 </head>
 <body>
@@ -13,33 +15,44 @@
   <link rel="stylesheet" href="../_ds/noor-design-system-46f42e91-1858-412f-bdb6-560a6cc3df9f/colors_and_type.css">
   <link rel="stylesheet" href="../_theme/poc.css">
   <link rel="stylesheet" href="../_theme/components.css">
-  <script src="../_ds/noor-design-system-46f42e91-1858-412f-bdb6-560a6cc3df9f/_ds_bundle.js"></script>
   <link rel="stylesheet" href="../_theme/icons.css">
+  <script src="../_ds/noor-design-system-46f42e91-1858-412f-bdb6-560a6cc3df9f/_ds_bundle.js"></script>
   <link rel="stylesheet" href="./storyboards/admin.css">
   <style>
-    body { background: var(--canvas-bg); padding: 36px 32px 90px; min-height: 100vh; box-sizing: border-box; }
-    ::-webkit-scrollbar { display: none; } * { -ms-overflow-style: none; scrollbar-width: none; }
+    body{background:var(--canvas-bg);padding:36px 32px 90px;min-height:100vh;box-sizing:border-box}
+    ::-webkit-scrollbar{display:none}*{-ms-overflow-style:none;scrollbar-width:none}
+    /* Page chrome only — component constructions live in _theme/components.css, feature marks in ./storyboards/admin.css. */
+    @keyframes adm-step{from{transform:translateX(24px);opacity:0}to{transform:translateX(0);opacity:1}}
+    .adm-step{animation:adm-step var(--motion-standard) cubic-bezier(.2,.8,.2,1)}
   </style>
 </helmet>
 
-<!-- Screen kit loader -->
+<!-- Kit + screen loader: components the storyboard rows and the device reference from `window`.
+     Dependencies first (React error #130 otherwise). -->
 <div style="display:none">
-  <x-import component="AdminHomeScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
-  <x-import component="AdminQueueScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
-  <x-import component="StandardReviewScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
-  <x-import component="ClaimedReviewScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="Dialog" from="../_theme/components.jsx" hint-size="0,0"></x-import>
+  <x-import component="EmptyState" from="../_theme/components.jsx" hint-size="0,0"></x-import>
+  <x-import component="Loader" from="../_theme/components.jsx" hint-size="0,0"></x-import>
+  <x-import component="SearchBar" from="../_theme/components.jsx" hint-size="0,0"></x-import>
+  <x-import component="AdminHubScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="AdminInvalidScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="AdminSignupsScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="AdminApprovalsScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="AdminLeadScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="AdminModerationScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
+  <x-import component="AdminPostScreen" from="./storyboards/admin-screens.jsx" hint-size="0,0"></x-import>
 </div>
 
 <x-import component="BoardHeader" from="../_theme/board.jsx"
-          title="Admin Console — Home &amp; Masjid Approvals"
-          subtitle="Platform operations console for Super Admins. Real-time pending queue, standard registration review, and the Claimed Masjid point-by-point data pick-and-merge flow comparing user submissions against sourced directory records."
+          title="Admin Console — Hub · Signups · Approvals · Moderation"
+          subtitle="The platform admin console: a hub that leads with who signed up and what is waiting, the approvals queue with a new-masjid request and a claim on a sourced masjid reviewed against the server's real contract, and the paigham moderation queue. One state model drives every frame and the live device."
           hint-size="1440px,92px"></x-import>
 
 <div class="poc-stage">
   <div class="poc-frames">
     <x-import component="AdminBoard" from="./storyboards/admin-board.jsx"
               active="{{ activeFrame }}" on-select-frame="{{ selectFrame }}"
-              hint-size="1600px,3800px"></x-import>
+              hint-size="1600px,4200px"></x-import>
   </div>
 
   <x-import component="BoardLive" from="../_theme/board.jsx" restart="{{ restart }}"
@@ -47,32 +60,39 @@
     <x-import component="IOSDevice" from="../ios-frame.jsx" hint-size="402px,874px">
       <div style="width:100%;height:100%;position:relative;overflow:hidden;background:var(--color-surface-primary)">
 
-        <sc-if value="{{ isHome }}">
-          <div style="position:absolute;inset:0">
-            <x-import component="AdminHomeScreen" from="./storyboards/admin-screens.jsx"
-                      data="{{ data }}" on-navigate="{{ navigate }}" hint-size="100%,100%"></x-import>
+        <sc-if value="{{ isHub }}">
+          <div style="position:absolute;inset:0" class="{{ stepAnim }}">
+            <x-import component="AdminHubScreen" from="./storyboards/admin-screens.jsx" data="{{ data }}" hint-size="100%,100%"></x-import>
           </div>
         </sc-if>
-
-        <sc-if value="{{ isQueue }}">
-          <div style="position:absolute;inset:0">
-            <x-import component="AdminQueueScreen" from="./storyboards/admin-screens.jsx"
-                      data="{{ data }}" on-navigate="{{ navigate }}" hint-size="100%,100%"></x-import>
+        <sc-if value="{{ isInvalid }}">
+          <div style="position:absolute;inset:0" class="{{ stepAnim }}">
+            <x-import component="AdminInvalidScreen" from="./storyboards/admin-screens.jsx" data="{{ data }}" hint-size="100%,100%"></x-import>
           </div>
         </sc-if>
-
-        <sc-if value="{{ isStdReview }}">
-          <div style="position:absolute;inset:0">
-            <x-import component="StandardReviewScreen" from="./storyboards/admin-screens.jsx"
-                      data="{{ data }}" on-navigate="{{ navigate }}" hint-size="100%,100%"></x-import>
+        <sc-if value="{{ isSignups }}">
+          <div style="position:absolute;inset:0" class="{{ stepAnim }}">
+            <x-import component="AdminSignupsScreen" from="./storyboards/admin-screens.jsx" data="{{ data }}" hint-size="100%,100%"></x-import>
           </div>
         </sc-if>
-
-        <sc-if value="{{ isClaimedReview }}">
-          <div style="position:absolute;inset:0">
-            <x-import component="ClaimedReviewScreen" from="./storyboards/admin-screens.jsx"
-                      data="{{ data }}" on-navigate="{{ navigate }}"
-                      on-update-selection="{{ updateSelection }}" hint-size="100%,100%"></x-import>
+        <sc-if value="{{ isApprovals }}">
+          <div style="position:absolute;inset:0" class="{{ stepAnim }}">
+            <x-import component="AdminApprovalsScreen" from="./storyboards/admin-screens.jsx" data="{{ data }}" hint-size="100%,100%"></x-import>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isLead }}">
+          <div style="position:absolute;inset:0" class="{{ stepAnim }}">
+            <x-import component="AdminLeadScreen" from="./storyboards/admin-screens.jsx" data="{{ data }}" hint-size="100%,100%"></x-import>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isModeration }}">
+          <div style="position:absolute;inset:0" class="{{ stepAnim }}">
+            <x-import component="AdminModerationScreen" from="./storyboards/admin-screens.jsx" data="{{ data }}" hint-size="100%,100%"></x-import>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isPost }}">
+          <div style="position:absolute;inset:0" class="{{ stepAnim }}">
+            <x-import component="AdminPostScreen" from="./storyboards/admin-screens.jsx" data="{{ data }}" hint-size="100%,100%"></x-import>
           </div>
         </sc-if>
 
@@ -85,98 +105,154 @@
 
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = {
-    activeFrame: 0,
-    currentScreen: 'home',
-    filter: 'ALL',
-    search: '',
-    leadId: 'lead-claim-101',
-    mergeSelections: {
-      name: 'LEAD',
-      maslak: 'LEAD',
-      address: 'LEAD',
-      city: 'MASJID',
-      state: 'MASJID',
-      pincode: 'MASJID',
-      coordinates: 'LEAD',
-      role: 'LEAD',
-    },
-    showRejectSheet: false,
-    showConfirmDialog: false,
-    isSuccess: false,
+  // Index cards deep-link into a state by hash.
+  HASH_ROUTES = {
+    '#hub': {},
+    '#quiet': { quiet: true },
+    '#admin-role': { role: 'ADMIN' },
+    '#invalid': { route: 'invalid' },
+    '#signups': { route: 'signups' },
+    '#approvals': { route: 'approvals' },
+    '#request': { route: 'lead', leadId: 'lead-102' },
+    '#claim': { route: 'lead', leadId: 'lead-101' },
+    '#moderation': { route: 'moderation' },
+    '#post': { route: 'post', postId: 'post-901' },
   };
 
+  state = window.adminApplyPatch(window.ADMIN_DEFAULT_STATE, this.HASH_ROUTES[window.location.hash] || {});
+
+  _timers = [];
+  componentWillUnmount() { this.clearTimers(); }
+  clearTimers = () => { this._timers.forEach((t) => clearTimeout(t)); this._timers = []; };
+  after = (ms, fn) => { this._timers.push(setTimeout(fn, ms)); };
+  patch = (p) => this.setState((s) => window.adminApplyPatch(s, p));
+
+  // Where "Back" lands from each route.
+  BACK_FROM = { signups: 'hub', approvals: 'hub', moderation: 'hub', lead: 'approvals', post: 'moderation', invalid: 'hub' };
+
+  // ── Navigation ──
   selectFrame = (index) => {
-    const frames = window.ADMIN_FRAMES || [];
-    const frame = frames[index];
+    const frame = (window.ADMIN_FRAMES || [])[index];
     if (!frame) return;
-
-    this.setState({
-      activeFrame: index,
-      currentScreen: frame.screen,
-      ...frame.state,
-    });
-  };
-
-  navigate = (screen, params) => {
-    this.setState((s) => ({
-      currentScreen: screen,
-      showRejectSheet: false,
-      showConfirmDialog: false,
-      isSuccess: false,
-      ...(params || {}),
+    this.clearTimers();
+    this.setState((s) => window.adminApplyPatch(window.ADMIN_DEFAULT_STATE, {
+      ...frame.state, decided: s.decided, postDecided: s.postDecided, stepDir: 'none',
     }));
   };
+  restart = () => { this.clearTimers(); this.setState(window.adminApplyPatch(window.ADMIN_DEFAULT_STATE, { stepDir: 'none' })); };
 
-  updateSelection = (fieldKey, mergeType) => {
-    this.setState((s) => ({
-      mergeSelections: {
-        ...s.mergeSelections,
-        [fieldKey]: mergeType,
-      },
+  go = (route, extra) => this.patch({ route, stepDir: 'fwd', snack: null, confirm: null, rejectSheet: null, viewer: null, editing: null, conflict: false, working: null, ...(extra || {}) });
+  onOpen = (route, extra) => this.go(route, extra);
+  onBack = () => this.setState((s) => window.adminApplyPatch(s, {
+    route: this.BACK_FROM[s.route] || 'hub', stepDir: 'back', confirm: null, rejectSheet: null, viewer: null, editing: null, conflict: false, working: null, corrections: {},
+  }));
+  onLogout = () => { window.location.href = '../onboarding/Onboarding.dc.html'; };
+  onRetry = () => {
+    this.patch({ hubStatus: 'loading', leadsStatus: 'loading' });
+    this.after(900, () => this.patch({ hubStatus: 'loaded', leadsStatus: 'loaded' }));
+  };
+
+  // ── Signups ──
+  onWindow = (id) => this.patch({ signupsWindow: id });
+
+  // ── Approvals queue ──
+  onFilter = (id) => this.patch({ leadFilter: id });
+  onSearch = (text) => this.patch({ leadSearch: text });
+  onOpenLead = (leadId) => this.go('lead', { leadId, corrections: {} });
+  onViewPhoto = (viewer) => this.patch({ viewer });
+  onCloseViewer = () => this.patch({ viewer: null });
+  onCloseSnack = () => this.patch({ snack: null });
+
+  // ── Review: approve / reject / correct ──
+  onAskApprove = () => this.setState((s) => window.adminApplyPatch(s, { confirm: { kind: s.route === 'post' ? 'post-approve' : 'approve' } }));
+  onCancelConfirm = () => this.patch({ confirm: null });
+  onConfirm = () => {
+    const s = this.state;
+    if (s.route === 'post') {
+      this.patch({ confirm: null, working: 'post-approve' });
+      this.after(1400, () => this.setState((st) => window.adminApplyPatch(st, {
+        working: null, route: 'moderation', stepDir: 'back',
+        postDecided: { ...st.postDecided, [st.postId]: { status: 'LIVE', decision: { by: 'Toufeeq Ahamed', on: 'Just now' } } },
+        snack: { tone: 'success', message: 'Paigham is live' },
+      })));
+      return;
+    }
+    this.patch({ confirm: null, working: 'approve' });
+    this.after(1600, () => this.setState((st) => {
+      const isClaim = st.leadId === 'lead-101';
+      const data = window.buildAdminData(st, {});
+      const name = data.lead ? (data.record ? data.record.name : data.lead.masjidName) : 'Masjid';
+      return window.adminApplyPatch(st, {
+        working: null, route: 'approvals', stepDir: 'back', leadFilter: 'P', corrections: {},
+        decided: { ...st.decided, [st.leadId]: { status: 'VERIFIED', decision: { by: 'Toufeeq Ahamed', on: 'Just now', masjidId: isClaim ? 'M560051012' : 'M570019004', corrections: data.correctionCount || undefined } } },
+        snack: { tone: 'success', message: isClaim ? `${name} has its committee` : `${name} is live · M570019004` },
+      });
     }));
   };
-
-  restart = () => {
-    this.selectFrame(0);
+  onOpenReject = () => this.patch({ conflict: false, confirm: null, rejectSheet: { reason: null } });
+  onPickReason = (reason) => this.patch({ rejectSheet: { reason } });
+  onCloseReject = () => this.patch({ rejectSheet: null });
+  onReject = () => {
+    const s = this.state;
+    const reason = s.rejectSheet && s.rejectSheet.reason;
+    if (!reason) return;
+    if (s.route === 'post') {
+      this.patch({ rejectSheet: null, working: 'post-reject' });
+      this.after(1200, () => this.setState((st) => window.adminApplyPatch(st, {
+        working: null, route: 'moderation', stepDir: 'back',
+        postDecided: { ...st.postDecided, [st.postId]: { status: 'REJECTED', decision: { by: 'Toufeeq Ahamed', on: 'Just now', reason } } },
+        snack: { tone: 'success', message: 'Paigham rejected · the committee was told why' },
+      })));
+      return;
+    }
+    this.patch({ rejectSheet: null, working: 'reject' });
+    this.after(1200, () => this.setState((st) => window.adminApplyPatch(st, {
+      working: null, route: 'approvals', stepDir: 'back', corrections: {},
+      decided: { ...st.decided, [st.leadId]: { status: 'REJECTED', decision: { by: 'Toufeeq Ahamed', on: 'Just now', reason } } },
+      snack: { tone: 'success', message: 'Request rejected · the applicant was told why' },
+    })));
   };
+  onEdit = (field, value) => this.patch({ editing: { field, value: value || '' } });
+  onEditValue = (value) => this.setState((s) => window.adminApplyPatch(s, { editing: { ...s.editing, value } }));
+  onCloseEdit = () => this.patch({ editing: null });
+  onSaveEdit = () => this.setState((s) => {
+    if (!s.editing) return s;
+    const trimmed = (s.editing.value || '').trim();
+    const data = window.buildAdminData(s, {});
+    const sourcedValue = data.sourced ? (s.editing.field === 'address' ? data.sourced.address.address : data.sourced[s.editing.field]) : null;
+    // Typing the sourced value back is not a correction.
+    const next = { ...s.corrections, [s.editing.field]: trimmed && trimmed !== sourcedValue ? trimmed : null };
+    return window.adminApplyPatch(s, { editing: null, corrections: next });
+  });
+
+  // ── Moderation ──
+  onPostFilter = (id) => this.patch({ postFilter: id });
+  onOpenPost = (postId) => this.go('post', { postId });
 
   renderVals() {
     const s = this.state;
-    const baseState = {
-      admin: window.MOCK_ADMIN,
-      leads: window.MOCK_LEADS,
-      sourcedMasjid: window.MOCK_SOURCED_MASJID,
-      rejectionReasons: [
-        'Incomplete or unverified authorization document',
-        'Cannot verify committee identity or contact number',
-        'Duplicate registration request for an active masjid',
-        'Address or coordinates do not match a physical masjid location',
-        'Requested role cannot be validated',
-        'Other reason (details provided in follow-up call)',
-      ],
-      filter: s.filter,
-      search: s.search,
-      leadId: s.leadId,
-      mergeSelections: s.mergeSelections,
-      showRejectSheet: s.showRejectSheet,
-      showConfirmDialog: s.showConfirmDialog,
-      isSuccess: s.isSuccess,
+    const handlers = {
+      onOpen: this.onOpen, onBack: this.onBack, onLogout: this.onLogout, onRetry: this.onRetry,
+      onWindow: this.onWindow,
+      onFilter: this.onFilter, onSearch: this.onSearch, onOpenLead: this.onOpenLead,
+      onViewPhoto: this.onViewPhoto, onCloseViewer: this.onCloseViewer, onCloseSnack: this.onCloseSnack,
+      onAskApprove: this.onAskApprove, onCancelConfirm: this.onCancelConfirm, onConfirm: this.onConfirm,
+      onOpenReject: this.onOpenReject, onPickReason: this.onPickReason, onCloseReject: this.onCloseReject, onReject: this.onReject,
+      onEdit: this.onEdit, onEditValue: this.onEditValue, onCloseEdit: this.onCloseEdit, onSaveEdit: this.onSaveEdit,
+      onPostFilter: this.onPostFilter, onOpenPost: this.onOpenPost,
     };
-
-    const assembledData = window.buildAdminData ? window.buildAdminData(baseState, {}) : baseState;
-
     return {
-      activeFrame: s.activeFrame,
-      currentScreen: s.currentScreen,
-      isHome: s.currentScreen === 'home',
-      isQueue: s.currentScreen === 'queue',
-      isStdReview: s.currentScreen === 'standard-review',
-      isClaimedReview: s.currentScreen === 'claimed-review',
-      data: assembledData,
+      data: window.buildAdminData ? window.buildAdminData(s, handlers) : {},
+      isHub: s.route === 'hub',
+      isInvalid: s.route === 'invalid',
+      isSignups: s.route === 'signups',
+      isApprovals: s.route === 'approvals',
+      isLead: s.route === 'lead',
+      isModeration: s.route === 'moderation',
+      isPost: s.route === 'post',
+      stepAnim: s.stepDir && s.stepDir !== 'none' ? 'adm-step' : '',
+      activeFrame: window.adminActiveFrameIndex ? window.adminActiveFrameIndex(s) : -1,
       selectFrame: this.selectFrame,
-      navigate: this.navigate,
-      updateSelection: this.updateSelection,
       restart: this.restart,
     };
   }

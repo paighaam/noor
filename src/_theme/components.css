@@ -153,6 +153,8 @@
 .gradient-detail-divider{width:60%;height:var(--size-xs);margin:var(--size-2xl) auto;border-radius:var(--radius-xs);background:linear-gradient(90deg,transparent,var(--surface-accent,var(--color-action-primary)),transparent)}
 
 /* ── Choice cards ── */
+/* Invalid-submit shake for a choice row (Personal Details, onboarding and the invitation inbox). */
+@keyframes ptshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
 .choice-group{display:flex;gap:var(--size-xl);width:100%}
 .choice-card{flex:1;min-height:72px;display:flex;align-items:center;gap:var(--size-xl);padding:var(--size-xl) var(--size-2xl);box-sizing:border-box;border-radius:var(--radius-2xl);border:1px solid var(--color-action-border);background:transparent;color:var(--color-info-primary);font-family:var(--font-body);cursor:pointer;text-align:left;transition:background var(--motion-quick) var(--ease-out),border-color var(--motion-quick) var(--ease-out),color var(--motion-quick) var(--ease-out)}
 .choice-card.selected{border:2px solid var(--color-action-primary);background:color-mix(in oklab,var(--color-action-primary) 10%,transparent);color:var(--color-action-primary)}
@@ -341,6 +343,7 @@
 .ind{display:flex;gap:6px;align-items:center;height:6px}
 .dot{height:6px;width:6px;border-radius:360px;background:var(--color-info-secondary);transition:width 300ms}
 .dot.active{width:28px;background:var(--color-info-primary)}
+.dot.edge{height:4px;width:4px}
 .dot.progress{width:28px;background:var(--color-info-secondary);position:relative;overflow:hidden}
 .dot.progress::after{content:"";position:absolute;inset:0;width:60%;background:var(--color-info-primary);border-radius:360px}
 
@@ -839,3 +842,22 @@
 .snack.docked{position:absolute;left:var(--size-2xl);right:var(--size-2xl);bottom:calc(var(--size-max) + var(--size-2xl));z-index:120;animation:noor-snack-in var(--motion-emphasized) var(--ease-out)}
 @keyframes noor-snack-in{from{opacity:0;transform:translateY(var(--size-xl))}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.snack.docked{animation:none}}
+
+/* ── Deck — the operations quilt (organism). A 2-up grid of solid-colour tiles, one per
+   destination, each in a semantic tone paired with its on-colour partner: jade, teal, gold, or the
+   quiet card surface. A tile leads with its own value when there is a number worth leading with
+   (a count, a clock) and with its glyph otherwise; the label sits under it so the deck is
+   scannable by colour and number before any word is read. Teal is deepened before it carries
+   white type: raw --color-action-secondary gives white only 3.7:1. Promoted 2026-09-12 from the
+   Masjid Console's .bcs-operation so the Admin Console shares one construction. ── */
+.deck{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.deck-tile{position:relative;display:flex;min-height:122px;overflow:hidden;flex-direction:column;align-items:flex-start;box-sizing:border-box;padding:14px;border:0;border-radius:var(--radius-huge);font:inherit;text-align:left;text-decoration:none;cursor:pointer;color:var(--color-info-primary);background:var(--color-surface-card);box-shadow:inset 0 0 0 1px var(--color-neutral-border);transition:transform var(--motion-press) var(--ease-out)}
+.deck-tile:active{transform:scale(.99)}
+.deck-tile.jade{background:var(--color-action-primary);color:var(--color-action-primary-inverse);box-shadow:none}
+.deck-tile.teal{background:color-mix(in oklab,var(--color-action-secondary) 85%,var(--color-neutral-black));color:var(--color-neutral-white);box-shadow:none}
+.deck-tile.gold{background:var(--color-neutral-brand);color:var(--color-neutral-black);box-shadow:none}
+.deck-tile-value{font-family:var(--font-body);font-size:29px;line-height:34px;font-weight:850;letter-spacing:-.035em;white-space:nowrap}
+.deck-tile-glyph{font-size:26px;line-height:34px}
+.deck-tile-badge{position:absolute;top:10px;right:10px;display:inline-flex;min-width:21px;height:21px;align-items:center;justify-content:center;box-sizing:border-box;padding:0 6px;border-radius:var(--radius-circle);background:var(--color-status-warning);color:var(--color-neutral-black);font-family:var(--font-body);font-size:9px;font-weight:900}
+.deck-tile>strong{margin-top:auto;padding-top:10px;font-family:var(--font-body);font-size:13px;line-height:17px;font-weight:800;letter-spacing:-.01em}
+.deck-tile>small{display:-webkit-box;overflow:hidden;max-width:100%;margin-top:2px;font-family:var(--font-body);font-size:10px;line-height:14px;-webkit-box-orient:vertical;-webkit-line-clamp:2}

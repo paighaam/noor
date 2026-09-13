@@ -125,7 +125,7 @@ class Component extends DCLogic {
     this._t = setTimeout(() => this.setState({ stage: 'searching', stepDir: 'fwd' }), 1400);
   };
 
-  onClose = () => { window.location.href = '../home/Home Screen.dc.html'; };
+  onClose = () => { window.location.href = '../home/Home Broadcast Studio.dc.html'; };
 
   // AR preview controls (a browser can't drive the real compass/accelerometer)
   onPointQibla = () => this.setState({ stage: 'inview', stepDir: 'fwd' });

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../support.js"></script>
+<script src="../_theme/chrome.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="../_ds/noor-design-system-46f42e91-1858-412f-bdb6-560a6cc3df9f/colors_and_type.css">
+  <link rel="stylesheet" href="../_theme/poc.css">
+  <link rel="stylesheet" href="../_theme/components.css">
+  <script src="../_ds/noor-design-system-46f42e91-1858-412f-bdb6-560a6cc3df9f/_ds_bundle.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&amp;display=block">
+  <link rel="stylesheet" href="../_theme/icons.css">
+  <style>
+    body{background:var(--canvas-bg);padding:36px 32px 90px;min-height:100vh;box-sizing:border-box}
+    ::-webkit-scrollbar{display:none}*{-ms-overflow-style:none;scrollbar-width:none}
+    /* page chrome: the spec panel for the selected variation */
+    .splash-spec{max-width:760px;margin-top:-80px}
+    .splash-spec-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:14px 0 16px}
+    .splash-spec-k{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-info-secondary);margin-bottom:4px}
+    .splash-spec-v{font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--color-info-primary)}
+    .splash-spec-p{font-family:var(--font-body);font-size:14px;line-height:1.5;color:var(--color-info-primary);margin:0 0 10px}
+    .splash-spec-p b{font-weight:700}
+    .splash-spec-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.55;color:var(--color-info-secondary);background:var(--color-surface-secondary);border-radius:10px;padding:10px 12px;margin-top:6px}
+  </style>
+</helmet>
+
+<!-- ── Page header (shared board chrome) ── -->
+<x-import component="BoardHeader" from="../_theme/board.jsx"
+          title="Splash — logo reveal"
+          subtitle="The cold-launch splash as Compose ships it, plus five variations. Frames loop; the device on the right plays the selected one once, like the app."
+          hint-size="1440px,92px"></x-import>
+
+<!-- ── Board ── -->
+<div class="poc-stage">
+
+  <div class="poc-frames">
+    <x-import component="SplashRow" from="./storyboards/splash-row.jsx"
+              active="{{ activeIdx }}" font="{{ font }}" on-select-frame="{{ selectFrame }}"
+              hint-size="1500px,520px"></x-import>
+
+    <!-- Selected variation: spec + levers -->
+    <div class="splash-spec">
+      <div class="poc-panel-label"><span class="mi" data-i="{{ activeIcon }}"></span> Selected · {{ activeIdx }} · {{ activeName }}</div>
+      <div class="surf subtle">
+        <p class="splash-spec-p"><b>{{ activeTagline }}</b></p>
+        <div class="splash-spec-grid">
+          <div><div class="splash-spec-k">Animation</div><div class="splash-spec-v">{{ activeDuration }} ms</div></div>
+          <div><div class="splash-spec-k">Hold before hand-off</div><div class="splash-spec-v">{{ activeHold }} ms</div></div>
+          <div><div class="splash-spec-k">Easing</div><div class="splash-spec-v">{{ activeEasing }}</div></div>
+        </div>
+        <p class="splash-spec-p">{{ activeWhy }}</p>
+        <div class="splash-spec-k">Compose mapping</div>
+        <div class="splash-spec-code">{{ activeCompose }}</div>
+
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px">
+          <div class="splash-spec-k" style="margin:0">Wordmark</div>
+          <div class="tbar">
+            <sc-for list="{{ fontChips }}" as="c" hint-placeholder-count="3">
+              <div onClick="{{ c.onSelect }}" style="border-radius:12px;padding:7px 14px;cursor:pointer;background:{{ c.bg }};transition:background var(--motion-standard)">
+                <span style="font-family:var(--font-body);font-size:12.5px;font-weight:700;color:{{ c.color }}">{{ c.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-family:var(--font-body);font-size:12px;color:var(--color-info-secondary)">{{ deviceStatus }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live device: plays the selected variation once, holds the final frame, Restart replays -->
+  <x-import component="BoardLive" from="../_theme/board.jsx" restart="{{ restart }}" hint-size="400px,900px">
+    <x-import component="IOSDevice" from="../ios-frame.jsx" hint-size="402px,874px">
+      <x-import component="SplashScreen" from="./storyboards/splash-row.jsx"
+                variant="{{ activeVariant }}" play-key="{{ playKey }}" font="{{ font }}" on-finished="{{ onFinished }}"
+                hint-size="100%,100%"></x-import>
+    </x-import>
+  </x-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  // The jsx module loads asynchronously via x-import, so read the registry lazily.
+  get variants() { return window.SPLASH_VARIANTS || []; }
+  get fonts() { return window.SPLASH_FONTS || {}; }
+
+  state = {
+    idx: this.indexFromHash(),
+    playKey: 0,
+    font: 'system',      // what Compose ships today; see SPLASH_FONTS
+    finished: false,
+  };
+
+  indexFromHash() {
+    const id = (location.hash || '#current').slice(1);
+    const i = (window.SPLASH_VARIANTS || []).findIndex(v => v.id === id);
+    return i < 0 ? 0 : i;
+  }
+
+  componentDidMount() {
+    this._onHash = () => this.selectFrame(this.indexFromHash(), false);
+    window.addEventListener('hashchange', this._onHash);
+    // Re-render once the variation registry has arrived; the hash may name a later frame.
+    this._poll = setInterval(() => {
+      if (!window.SPLASH_VARIANTS) return;
+      clearInterval(this._poll);
+      this.setState({ idx: this.indexFromHash() });
+    }, 40);
+  }
+  componentWillUnmount() { window.removeEventListener('hashchange', this._onHash); clearInterval(this._poll); }
+
+  selectFrame = (i, pushHash = true) => {
+    const v = this.variants[i];
+    if (!v) return;
+    if (pushHash && location.hash !== '#' + v.id) history.replaceState(null, '', '#' + v.id);
+    this.setState(s => ({ idx: i, playKey: s.playKey + 1, finished: false }));
+  };
+
+  restart = () => this.setState(s => ({ playKey: s.playKey + 1, finished: false }));
+  onFinished = () => { if (!this.state.finished) this.setState({ finished: true }); };
+  setFont = (key) => this.setState(s => ({ font: key, playKey: s.playKey + 1, finished: false }));
+
+  renderVals() {
+    const s = this.state;
+    const v = this.variants[s.idx] || this.variants[0] || {};
+    const fontChips = Object.keys(this.fonts).map(key => ({
+      label: this.fonts[key].label,
+      bg: s.font === key ? 'var(--color-action-primary)' : 'transparent',
+      color: s.font === key ? 'var(--color-action-primary-inverse)' : 'var(--color-info-secondary)',
+      onSelect: () => this.setFont(key),
+    }));
+    return {
+      activeIdx: s.idx,
+      activeVariant: v,
+      activeName: v.name || '',
+      activeIcon: v.icon || 'auto_awesome',
+      activeTagline: v.tagline || '',
+      activeWhy: v.why || '',
+      activeCompose: v.compose || '',
+      activeEasing: v.easingLabel || '',
+      activeDuration: v.duration || 0,
+      activeHold: v.hold || 0,
+      playKey: s.playKey,
+      font: s.font,
+      fontChips,
+      selectFrame: this.selectFrame,
+      restart: this.restart,
+      onFinished: this.onFinished,
+      deviceStatus: s.finished
+        ? 'Device: finished — the app hands over to Intro (fresh install) or Home (returning) here.'
+        : 'Device: playing once, as a cold launch does.',
+    };
+  }
+}
+</script>
+</body>
+</html>
