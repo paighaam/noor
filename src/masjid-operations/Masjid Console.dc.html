@@ -429,6 +429,7 @@ class Component extends DCLogic {
   onOpenSwitcher = () => this.patch({ switcherOpen: true, postMenuFor: null });
   onCloseSwitcher = () => this.patch({ switcherOpen: false });
   onPickMasjid = (masjidId) => {
+    if (this.state.transferringId) return;
     const pick = (window.OPS_MANAGED || []).find((m) => m.id === masjidId);
     // Switching from inside compose retargets the draft; it must not throw the author back
     // to the hub and lose what they have written.
@@ -453,6 +454,7 @@ class Component extends DCLogic {
     const id = this.state.memberId;
     const data = window.buildOpsData(this.state, {});
     const member = (data.members.items || []).find((m) => m.id === id);
+    if (!member || !data.me || !window.OPS_CAPS.isAdmin(data.caps) || (!data.me.isOwner && (member.isOwner || window.OPS_CAPS.isAdmin(member.caps)))) return;
     const available = window.opsAvailableCommitteeRoles(data.members.items, id);
     if (available.indexOf(role) === -1) {
       this.toast('role-taken', 'That committee role is already assigned', 'error');
@@ -468,7 +470,9 @@ class Component extends DCLogic {
   onToggleCapability = (memberId, capId) => {
     const data = window.buildOpsData(this.state, {});
     const member = (data.members.items || []).find((m) => m.id === memberId);
-    if (!member) return;
+    if (!member || !data.me || !window.OPS_CAPS.isAdmin(data.caps) || this.state.transferringId) return;
+    if (!data.me.isOwner && (member.isOwner || window.OPS_CAPS.isAdmin(member.caps) || capId === 'committee')) return;
+    if (member.isOwner && capId === 'committee') return;
     const current = member.caps || [];
     const next = current.indexOf(capId) === -1
       ? current.concat([capId])
@@ -482,7 +486,17 @@ class Component extends DCLogic {
       ? `${member.name} can now: ${label}`
       : `${label} removed for ${member.name}`);
   };
+  onOpenTransfer = (member) => {
+    const data = window.buildOpsData(this.state, {});
+    if (!data.me || !data.me.isOwner || !window.OPS_CAPS.isAdmin(data.caps) || this.state.transferringId) return;
+    this.patch({ transferError: false, confirm: { kind: 'transferOwnership', id: member.id } });
+  };
   onOpenRemove = (member) => this.patch({ confirm: { kind: 'removeMember', id: member.id } });
+  onWithdrawInvitation = (member) => {
+    const data = window.buildOpsData(this.state, {});
+    if (!data.me || !window.OPS_CAPS.isAdmin(data.caps) || (window.OPS_CAPS.isAdmin(member.caps) && !data.me.isOwner)) return;
+    this.patch({ confirm: { kind: 'withdrawInvitation', id: member.id } });
+  };
 
   // The invite is a destination screen, so opening it is navigation, not a flag.
   onOpenInvite = () => this.transitionTo({
@@ -500,6 +514,8 @@ class Component extends DCLogic {
     this.patch({ invite: { role }, openMenu: null });
   };
   onInviteCapability = (capId) => this.setState((st) => {
+    const data = window.buildOpsData(st, {});
+    if (capId === 'committee' && (!data.me || !data.me.isOwner)) return st;
     const caps = st.invite.caps || [];
     return window.opsApplyPatch(st, {
       invite: { caps: caps.indexOf(capId) === -1 ? caps.concat([capId]) : caps.filter((c) => c !== capId) },
@@ -676,11 +692,41 @@ class Component extends DCLogic {
       this.after(800, () => { this.hide(confirm.id); this.patch({ deletingId: null }); this.toast('post-deleted', 'Post deleted'); });
       return;
     }
+    if (confirm.kind === 'transferOwnership') {
+      const data = window.buildOpsData(this.state, {});
+      const target = data.members.items.find((m) => m.id === confirm.id);
+      if (!data.me || !data.me.isOwner || !window.OPS_CAPS.isAdmin(data.caps) || !target || target.status !== 'ACTIVE') return;
+      const originMasjid = this.state.masjidId;
+      const originOwner = this.state.ownerId;
+      this.patch({ transferringId: target.id });
+      this.after(700, () => {
+        if (this.state.masjidId !== originMasjid || this.state.ownerId !== originOwner || this.state.transferringId !== target.id) return;
+        this.patch({ ownerId: target.id, transferringId: null,
+          capOverrides: Object.assign({}, this.state.capOverrides, { [target.id]: Array.from(new Set(target.caps.concat(['committee']))) }) });
+        this.toast('ownership-transferred', 'Ownership transferred');
+      });
+      return;
+    }
     if (confirm.kind === 'removeMember') {
-      const member = (window.OPS_MEMBERS || []).find((m) => m.id === confirm.id);
+      const data = window.buildOpsData(this.state, {});
+      const member = data.members.items.find((m) => m.id === confirm.id);
+      if (!member || member.isOwner || (!member.you && (!window.OPS_CAPS.isAdmin(data.caps) || (!data.me.isOwner && window.OPS_CAPS.isAdmin(member.caps))))) return;
       this.hide(confirm.id);
+      if (member.you) {
+        this.patch({ caps: [], consoleStatus: 'locked', dest: 'home', memberId: null, ownerId: null });
+        this.toast('committee-left', 'You left the committee');
+        return;
+      }
       if (this.state.dest === 'member') this.transitionTo({ dest: 'members', memberId: null });
       this.toast('member-removed', `${member ? member.name : 'Member'} removed from the committee`);
+      return;
+    }
+    if (confirm.kind === 'withdrawInvitation') {
+      const data = window.buildOpsData(this.state, {});
+      const target = data.members.items.find((m) => m.id === confirm.id);
+      if (!data.me || !target || !window.OPS_CAPS.isAdmin(data.caps) || (window.OPS_CAPS.isAdmin(target.caps) && !data.me.isOwner)) return;
+      this.patch({ withdrawingId: confirm.id });
+      this.after(700, () => { this.hide(confirm.id); this.patch({ withdrawingId: null }); this.toast('invitation-withdrawn', 'Invitation withdrawn'); });
       return;
     }
     if (confirm.kind === 'declineInvitation') {
@@ -724,7 +770,7 @@ class Component extends DCLogic {
       onToggleMemberMenu: this.onToggleMemberMenu,
       onOpenMember: this.onOpenMember, onPickRole: this.onPickRole,
       onToggleCapability: this.onToggleCapability,
-      onOpenRemove: this.onOpenRemove, onOpenInvite: this.onOpenInvite,
+      onOpenTransfer: this.onOpenTransfer, onOpenRemove: this.onOpenRemove, onWithdrawInvitation: this.onWithdrawInvitation, onOpenInvite: this.onOpenInvite,
       onInvitePhone: this.onInvitePhone, onInviteRole: this.onInviteRole,
       onInviteCapability: this.onInviteCapability, onSendInvite: this.onSendInvite,
       onOpenMenu: this.onOpenMenu,

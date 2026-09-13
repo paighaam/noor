@@ -1061,14 +1061,18 @@ function DetailsBody({ data }) {
 // ══════════════════════════════════════════════════════════════════════
 
 // A committee row: who they are, the title they hold, and — at a glance — what they may do.
-function MemberRow({ member, manageable, onOpen }) {
+// An INVITED row has no member screen behind it — nothing to open, no permissions to edit — so
+// for a full admin it carries its one action inline: a small tonal destructive `close` that
+// withdraws the invitation (after confirmation). A chevron leading nowhere would promise more.
+function MemberRow({ member, manageable, onOpen, onWithdraw, withdrawing }) {
   const invited = member.status === 'INVITED';
-  const Root = manageable ? 'button' : 'div';
+  const opens = manageable && !invited;
+  const Root = opens ? 'button' : 'div';
   return (
     <Root
-      className={`list-item${manageable ? ' actionable' : ''}`}
-      onClick={manageable ? onOpen : undefined}
-      type={manageable ? 'button' : undefined}
+      className={`list-item${opens ? ' actionable' : ''}`}
+      onClick={opens ? onOpen : undefined}
+      type={opens ? 'button' : undefined}
       style={{ padding: '12px 4px', minHeight: 68 }}
     >
       <span style={{ flexShrink: 0 }}><Avatar text={member.name} size={42} /></span>
@@ -1076,6 +1080,7 @@ function MemberRow({ member, manageable, onOpen }) {
         <span className="list-item-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {member.name}
           {member.you ? <span className="badge sm teal">You</span> : null}
+          {member.isOwner ? <span className="badge sm">Owner</span> : null}
         </span>
         <span className="member-caps">
           <span className="member-role">{roleLabel(member.role)}</span>
@@ -1094,7 +1099,21 @@ function MemberRow({ member, manageable, onOpen }) {
         </span>
       </span>
       {invited ? <span className="badge sm amber" style={{ flexShrink: 0 }}>Invited</span> : null}
-      {manageable ? <span className="mi list-item-chevron" data-i="chevron_right" aria-hidden="true"></span> : null}
+      {invited && manageable ? (
+        <button
+          className="btn btn-tonal destructive sm"
+          type="button"
+          aria-label="Withdraw invitation"
+          disabled={withdrawing}
+          onClick={onWithdraw}
+          style={{ flexShrink: 0, padding: 0, width: 32, minHeight: 32, borderRadius: 999 }}
+        >
+          {withdrawing
+            ? <span className="status-capsule-ring" aria-hidden="true"></span>
+            : <span className="mi" data-i="close" style={{ fontSize: 18 }}></span>}
+        </button>
+      ) : null}
+      {opens ? <span className="mi list-item-chevron" data-i="chevron_right" aria-hidden="true"></span> : null}
     </Root>
   );
 }
@@ -1103,8 +1122,11 @@ function MemberRow({ member, manageable, onOpen }) {
 // change their role, their permissions, or remove them. Active members and members who have
 // not accepted yet are separate groups, because they need different attention.
 function CommitteeBody({ data }) {
-  const { caps = [], masjid = OPS_MASJID, members = {}, onRetry, onOpenInvite, onOpenMember } = data;
-  const { status = 'loaded', items = [] } = members;
+  const {
+    caps = [], masjid = OPS_MASJID, members = {},
+    onRetry, onOpenInvite, onOpenMember, onWithdrawInvitation,
+  } = data;
+  const { status = 'loaded', items = [], withdrawingId = null } = members;
   const isAdmin = OPS_CAPS.isAdmin(caps);
   const active = items.filter((m) => m.status !== 'INVITED');
   const invited = items.filter((m) => m.status === 'INVITED');
@@ -1138,7 +1160,7 @@ function CommitteeBody({ data }) {
               </div>
               <div className="summary-hero-label">
                 {isAdmin
-                  ? 'Tap anyone to change their role or permissions.'
+                  ? 'View members and manage their access.'
                   : 'The icons show what each member is allowed to do.'}
               </div>
             </div>
@@ -1149,7 +1171,7 @@ function CommitteeBody({ data }) {
               <MemberRow
                 key={member.id}
                 member={member}
-                manageable={isAdmin}
+                manageable={isAdmin && (member.status !== 'INVITED' || !OPS_CAPS.isAdmin(member.caps) || !!(data.me && data.me.isOwner))}
                 onOpen={() => onOpenMember && onOpenMember(member)}
               />
             ))}
@@ -1166,8 +1188,9 @@ function CommitteeBody({ data }) {
                   <MemberRow
                     key={member.id}
                     member={member}
-                    manageable={isAdmin}
-                    onOpen={() => onOpenMember && onOpenMember(member)}
+                    manageable={isAdmin && (member.status !== 'INVITED' || !OPS_CAPS.isAdmin(member.caps) || !!(data.me && data.me.isOwner))}
+                    withdrawing={withdrawingId === member.id}
+                    onWithdraw={() => onWithdrawInvitation && onWithdrawInvitation(member)}
                   />
                 ))}
               </div>
@@ -1234,7 +1257,7 @@ function CapabilityRow({ capability, on, disabled, onToggle }) {
 // set you edit later cannot drift apart.
 function MemberBody({ data }) {
   const {
-    caps = [], members = {}, openMenu, onBack, onOpenMenu, onPickRole, onToggleCapability, onOpenRemove,
+    caps = [], members = {}, openMenu, onBack, onOpenMenu, onPickRole, onToggleCapability, onOpenRemove, onOpenTransfer,
     onInvitePhone, onInviteRole, onInviteCapability, onSendInvite,
   } = data;
   const inviting = data.dest === 'invite';
@@ -1247,10 +1270,12 @@ function MemberBody({ data }) {
   const grantedCaps = inviting ? (invite.caps || []) : member.caps;
   const memberIsAdmin = OPS_CAPS.isAdmin(grantedCaps);
   // The masjid must keep one full admin, so the last one cannot revoke their own grant.
-  const soleAdmin = !inviting && memberIsAdmin && (members.adminCount || 0) <= 1;
+
   // Inviting is itself a full-admin action, so the switches are live; editing someone else
   // requires the grant.
-  const canEdit = inviting || isAdmin;
+  const amOwner = !!(data.me && data.me.isOwner);
+  const canEdit = isAdmin && (inviting || amOwner || (!member.isOwner && !memberIsAdmin));
+  const transferring = !!members.transferringId;
   const phone = invite.phone || '';
   const inviteValid = phone.replace(/\D/g, '').length >= 10 && !!invite.role;
   const availableRoles = availableCommitteeRoles(members.items, member && member.id);
@@ -1269,6 +1294,7 @@ function MemberBody({ data }) {
           <div className="screen-title">{inviting ? 'Invite a member' : `${member.name}${member.you ? ' (you)' : ''}`}</div>
           <div className="member-head-meta">
             <span>{inviting ? 'They accept inside Paigham within 7 days' : member.phone}</span>
+            {!inviting && member.isOwner ? <span className="badge sm">Owner</span> : null}
             {!inviting && member.status === 'INVITED' ? <span className="badge sm amber">Invitation pending</span> : null}
           </div>
         </div>
@@ -1312,7 +1338,7 @@ function MemberBody({ data }) {
               return current ? roleLabel(current) : '';
             })()}
             placeholder="Select a role"
-            disabled={!canEdit}
+            disabled={!canEdit || transferring}
             ariaLabel="Role in the committee"
             onOpen={() => onOpenMenu && onOpenMenu('member-role')}
           />
@@ -1330,7 +1356,7 @@ function MemberBody({ data }) {
         <div>
           <SectionLabel hint={(() => {
             if (inviting) return 'They get these the moment they accept. Changeable any time afterwards.';
-            return isAdmin ? 'Changes apply immediately.' : 'Only a full admin can change these.';
+            return canEdit ? 'Changes apply immediately.' : memberIsAdmin ? 'Only the owner can change this manager’s permissions.' : 'A committee manager can change these permissions.';
           })()}>
             Permissions
           </SectionLabel>
@@ -1342,7 +1368,7 @@ function MemberBody({ data }) {
                   key={capability.id}
                   capability={capability}
                   on={on}
-                  disabled={!canEdit || (capability.id === 'committee' && soleAdmin)}
+                  disabled={!canEdit || transferring || (capability.id === 'committee' && (!amOwner || (!inviting && member.isOwner)))}
                   onToggle={() => (inviting
                     ? onInviteCapability && onInviteCapability(capability.id)
                     : onToggleCapability && onToggleCapability(member.id, capability.id))}
@@ -1350,12 +1376,10 @@ function MemberBody({ data }) {
               );
             })}
           </Card>
-          {soleAdmin ? (
-            <div style={{ fontSize: 11, lineHeight: 1.5, padding: '8px 4px 0', color: 'var(--color-info-tertiary)' }}>
-              This masjid needs at least one full admin, so this permission can't be removed from
-              the only one. Grant it to someone else first.
-            </div>
-          ) : null}
+          {!inviting && member.isOwner ? <div className="helper">{member.you
+            ? 'You are the owner. Transfer ownership to another active member before leaving or giving up management access.'
+            : 'The owner manages committee access. Their membership is protected until they transfer ownership.'}</div> : null}
+          {!amOwner ? <div className="helper">Only the owner can appoint or remove managers.</div> : null}
           {/* Says out loud what is no longer a permission, so its absence reads as a decision. */}
           <div style={{ fontSize: 11, lineHeight: 1.5, padding: '8px 4px 0', color: 'var(--color-info-tertiary)' }}>
             Salaah timings are not listed here — anyone using Paigham can update them, and every
@@ -1392,12 +1416,19 @@ function MemberBody({ data }) {
           ) : null}
         </Card>
 
-        {!inviting && isAdmin && !member.you ? (
+        {!inviting && isAdmin && amOwner && !member.you && !member.isOwner && member.status === 'ACTIVE' ? (
+          <button className="btn lg btn-tonal" type="button" disabled={transferring} onClick={() => onOpenTransfer && onOpenTransfer(member)}>
+            Transfer ownership to this member
+          </button>
+        ) : null}
+        {transferring ? <div className="status-capsule" role="status">Transferring ownership…</div> : null}
+        {members.transferError ? <div className="helper err" role="alert">Ownership was not transferred. Review the member and try again.</div> : null}
+        {!inviting && !member.isOwner && (canEdit || member.you) && !transferring ? (
           // Tonal, not filled. This screen exists to grant and revoke permissions, so the
           // toggles must stay the visual centre of gravity; a solid red bar outranks them and
           // makes the rarest action the loudest. The confirmation dialog carries the weight.
           <button className="btn lg btn-tonal destructive" style={{ width: '100%' }} onClick={() => onOpenRemove && onOpenRemove(member)}>
-            <span className="mi" style={{ fontSize: 20 }} data-i="delete"></span>Remove from committee
+            <span className="mi" style={{ fontSize: 20 }} data-i="delete"></span>{member.you ? 'Leave committee' : 'Remove from committee'}
           </button>
         ) : null}
       </Body>
