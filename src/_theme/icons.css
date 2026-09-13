@@ -70,6 +70,7 @@
 [data-i="more_vert"]{--mi:url("../_ds/icons/more_vert.svg")}
 [data-i="mosque"]{--mi:url("../_ds/icons/mosque.svg");--mif:url("../_ds/icons/mosque__fill.svg")}
 [data-i="mosque_clock2"]{--mi:url("../_ds/icons/mosque_clock2.svg")}
+[data-i="location_disabled"]{--mi:url("../_ds/icons/location_disabled.svg")}
 [data-i="my_location"]{--mi:url("../_ds/icons/my_location.svg")}
 [data-i="near_me"]{--mi:url("../_ds/icons/near_me.svg")}
 [data-i="notifications"]{--mi:url("../_ds/icons/notifications.svg");--mif:url("../_ds/icons/notifications__fill.svg")}
@@ -118,3 +119,7 @@
 [data-i="widgets"]{--mi:url("../_ds/icons/widgets.svg")}
 [data-i="delete"]{--mi:url("../_ds/icons/delete.svg")}
 [data-i="edit"]{--mi:url("../_ds/icons/edit.svg")}
+[data-i="person_add"]{--mi:url("../_ds/icons/person_add.svg")}
+[data-i="trending_up"]{--mi:url("../_ds/icons/trending_up.svg")}
+[data-i="fact_check"]{--mi:url("../_ds/icons/fact_check.svg")}
+[data-i="history"]{--mi:url("../_ds/icons/history.svg")}

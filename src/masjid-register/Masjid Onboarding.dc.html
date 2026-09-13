@@ -95,14 +95,23 @@
     .registration-grid-cell:not(.masjid-manage-grid-item-wide) .registration-tile-meta{flex-direction:column;align-items:flex-start;gap:0}
     .registration-grid-cell:not(.masjid-manage-grid-item-wide) .registration-tile-separator{display:none}
     .registration-grid-cell:not(.masjid-manage-grid-item-wide) .registration-tile-chevron{position:absolute;top:12px;right:10px}
-    .wizard-map{position:relative;height:188px;overflow:hidden;border:1px solid var(--color-neutral-border);border-radius:var(--radius-2xl);background:var(--color-surface-secondary);transition:height var(--motion-emphasized) var(--ease-out)}
-    .wizard-map.expanded{height:330px}
+    .wizard-map{position:relative;height:330px;overflow:hidden;border:1px solid var(--color-neutral-border);border-radius:var(--radius-2xl);background:var(--color-surface-secondary)}
     .wizard-map-grid{position:absolute;inset:-20%;opacity:.55;background-image:linear-gradient(var(--color-neutral-border) 1px,transparent 1px),linear-gradient(90deg,var(--color-neutral-border) 1px,transparent 1px);background-size:52px 52px;transform:rotate(-7deg) scale(1.15)}
     .wizard-map-road{position:absolute;left:-8%;right:-8%;top:48%;height:18px;transform:rotate(-11deg);border:1px solid var(--color-neutral-border);background:color-mix(in oklab,var(--color-surface-primary) 82%,transparent)}
+    .wizard-map-hit-area{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;cursor:grab}
     .wizard-map-pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);filter:drop-shadow(0 8px 12px color-mix(in oklab,var(--color-surface-scrim) 60%,transparent))}
     .wizard-map-pin .mi{font-size:46px;color:var(--color-action-primary)}
     .wizard-map-actions{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:8px}
     .wizard-map-status{position:absolute;left:10px;right:10px;bottom:10px;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:12px;background:color-mix(in oklab,var(--color-surface-primary) 90%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font-family:var(--font-body);font-size:11.5px;font-weight:600;color:var(--color-info-primary)}
+    .wizard-map-guidance{position:absolute;inset:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center;border:1px solid color-mix(in oklab,var(--color-neutral-border) 72%,transparent);border-radius:calc(var(--radius-2xl) - 4px);background:color-mix(in oklab,var(--color-surface-card) 94%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+    .wizard-map-guidance-icon{width:54px;height:54px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;border-radius:var(--radius-circle);background:color-mix(in oklab,var(--color-action-primary) 12%,var(--color-surface-card));color:var(--color-action-primary)}
+    .wizard-map-guidance-icon .mi{font-size:28px}
+    .wizard-map-guidance-icon.loading .mi{animation:wizard-location-spin 1s linear infinite}
+    .wizard-map-guidance-title{margin-bottom:6px;font-family:var(--font-body);font-size:17px;font-weight:750;color:var(--color-info-primary)}
+    .wizard-map-guidance-body{max-width:270px;font-family:var(--font-body);font-size:12.5px;line-height:1.55;color:var(--color-info-secondary)}
+    .wizard-map-guidance-actions{width:100%;display:grid;grid-template-columns:1fr;gap:8px;margin-top:18px}
+    .wizard-map-guidance-actions .btn{width:100%;justify-content:center}
+    @keyframes wizard-location-spin{to{transform:rotate(360deg)}}
     .resolved-location{display:flex;align-items:flex-start;gap:10px;padding:12px;margin-bottom:16px;border:1px solid color-mix(in oklab,var(--color-action-primary) 34%,var(--color-neutral-border));border-radius:var(--radius-xl);background:color-mix(in oklab,var(--color-action-primary) 6%,var(--color-surface-card))}
     .resolved-location .mi{font-size:20px;color:var(--color-action-primary)}
     .photo-source-panel{position:relative;overflow:hidden;padding:18px;border:1px solid color-mix(in oklab,var(--color-action-primary) 34%,var(--color-neutral-border));border-radius:var(--radius-2xl);background:var(--gradient-emerald),var(--color-surface-card);box-shadow:0 18px 36px -28px color-mix(in oklab,var(--color-action-primary) 60%,transparent)}
@@ -298,7 +307,7 @@ class Component extends DCLogic {
     captureCoordinates: '19.0206, 72.8406',
     captureAccuracy: '±8 m',
     cameraMode: null, cameraStage: 'rationale', cameraPermission: 'unknown',
-    locationExpanded: false, locationResolved: false, locationLookupFailed: false,
+    locationPhase: 'choice', locationResolved: false, locationLookupFailed: false,
     errors: {}, ctaFeedback: '',
     // The masjid a switch is in flight for; its name is what the capsule states.
     masjidSwitchingId: null,
@@ -311,7 +320,7 @@ class Component extends DCLogic {
   WIZARD_STEPS = ['pincode','searching','claimList','claimEmpty','register','contact','role','maslak','photo','selfie','review'];
   ENTRY_STEPS = ['home','salaah','profile'];
   STEP_PROGRESS = { pincode:1, searching:1, claimList:2, claimEmpty:2, register:2, contact:3, role:4, maslak:5, photo:6, selfie:7, review:8 };
-  SAMPLE = { pincode:'400016', masjidName:'Masjid-e-Noor', address:'Kabutar Khana', city:'Mumbai', stateVal:'Maharashtra', stateAutoFilled:true, pinDropped:true, contactName:'Salim Shaikh', role:'Chairman', maslak:'Ahle Hadith', photoTaken:true, selfieTaken:true, photoSrc:'../../images/masjid-camera-preview.png', selfieSrc:'../../images/identity-camera-preview.png', photoLocationAttached:true, captureLocationStatus:'ready', capturePlace:'Kabutar Khana, Mumbai', captureCoordinates:'19.0206, 72.8406', captureAccuracy:'±8 m', locationResolved:true, locationLookupFailed:false, locationExpanded:false, cameraMode:null, cameraStage:'rationale', cameraPermission:'unknown', errors:{}, ctaFeedback:'' };
+  SAMPLE = { pincode:'400016', masjidName:'Masjid-e-Noor', address:'Kabutar Khana', city:'Mumbai', stateVal:'Maharashtra', stateAutoFilled:true, pinDropped:true, contactName:'Salim Shaikh', role:'Chairman', maslak:'Ahle Hadith', photoTaken:true, selfieTaken:true, photoSrc:'../../images/masjid-camera-preview.png', selfieSrc:'../../images/identity-camera-preview.png', photoLocationAttached:true, captureLocationStatus:'ready', capturePlace:'Kabutar Khana, Mumbai', captureCoordinates:'19.0206, 72.8406', captureAccuracy:'±8 m', locationPhase:'confirmed', locationResolved:true, locationLookupFailed:false, cameraMode:null, cameraStage:'rationale', cameraPermission:'unknown', errors:{}, ctaFeedback:'' };
 
   get MANAGE() { return window.MASJID_MANAGE_DATA || []; }
   get FOLLOW() { return window.MASJID_FOLLOW_DATA || []; }
@@ -321,14 +330,14 @@ class Component extends DCLogic {
   get MASLAKS() { return window.MASJID_MASLAK_LIST || []; }
   get STATES() { return window.MASJID_STATE_LIST || []; }
 
-  componentWillUnmount() { clearTimeout(this._t); }
+  componentWillUnmount() { clearTimeout(this._t); clearTimeout(this._locationTimer); }
 
   resetWizard() {
     return { branch:null, pincode:'', selectedMasjidId:null, address:'', city:'', stateVal:'', pinDropped:false,
       contactName:'Salim Shaikh', role:'', maslak:'', roleSheetOpen:false, maslakSheetOpen:false, stateSheetOpen:false, stateAutoFilled:false, photoTaken:false, selfieTaken:false,
       photoSrc:null, selfieSrc:null, photoLocationAttached:false, captureLocationStatus:'ready',
       capturePlace:'Kabutar Khana, Mumbai', captureCoordinates:'19.0206, 72.8406', captureAccuracy:'±8 m',
-      cameraMode:null, cameraStage:'rationale', cameraPermission:'unknown', locationExpanded:false, locationResolved:false, locationLookupFailed:false,
+      cameraMode:null, cameraStage:'rationale', cameraPermission:'unknown', locationPhase:'choice', locationResolved:false, locationLookupFailed:false,
       errors:{}, ctaFeedback:'' };
   }
 
@@ -337,7 +346,10 @@ class Component extends DCLogic {
     const map = {
       'entry':0, 'home':0, 'salaah':1, 'profile':2,
       'my-masjids':3, 'my-masjids-profile':3, 'my-masjids-home':5, 'my-masjids-salaah':6,
-      'register':5, 'wizard':5, 'state-sheet':15, 'photo':24, 'photo-camera':26, 'photo-captured':27, 'photo-location':30, 'selfie':31, 'review':37, 'pending':39, 'rejected':40
+      'register':5, 'wizard':5,
+      'location':11, 'location-loading':12, 'location-denied':13, 'location-unavailable':14,
+      'location-positioned':15, 'location-confirmed':16, 'location-manual':17,
+      'state-sheet':19, 'photo':28, 'photo-camera':29, 'photo-captured':30, 'photo-location':33, 'selfie':34, 'review':38, 'pending':42, 'rejected':43
     };
     if (map[h] !== undefined) this.selectFrame(map[h]);
   }
@@ -369,35 +381,39 @@ class Component extends DCLogic {
       8: { ...R, step:'claimList', branch:'claim', pincode:'400001', errors:{ claim:'Choose your masjid, or add it manually.' }, ctaFeedback:'Choose a masjid to continue.', sheetOpen:false },
       9: { ...R, step:'claimList', branch:'claim', pincode:'400001', selectedMasjidId:1, sheetOpen:false },
       10: { ...R, step:'claimEmpty', pincode:'560001', sheetOpen:false },
-      11: { ...S, step:'register', branch:'register', sheetOpen:false },
-      12: { ...R, step:'register', branch:'register', pincode:'400016', errors:{ masjidName:'Enter the masjid name.', address:'Enter an address or nearby landmark.', city:'Enter the town or locality.', stateVal:'Enter the state.', pinDropped:'Pin the masjid entrance on the map.' }, ctaFeedback:'Check the highlighted fields and try again.', sheetOpen:false },
-      13: { ...S, step:'register', branch:'register', city:'', stateVal:'', locationResolved:false, locationLookupFailed:true, sheetOpen:false },
-      14: { ...S, step:'register', branch:'register', locationExpanded:true, sheetOpen:false },
-      15: { ...S, step:'register', branch:'register', stateSheetOpen:true, sheetOpen:false },
-      16: { ...S, step:'contact', branch:'register', sheetOpen:false },
-      17: { ...S, step:'contact', branch:'register', contactName:'', errors:{ contactName:'Enter the name of the person we should contact.' }, ctaFeedback:'Check the highlighted field and try again.', sheetOpen:false },
-      18: { ...S, step:'role', branch:'register', role:'', sheetOpen:false },
-      19: { ...S, step:'role', branch:'register', role:'', errors:{ role:'Select your role at this masjid.' }, ctaFeedback:'Select a role to continue.', sheetOpen:false },
-      20: { ...S, step:'role', branch:'register', role:'Chairman', roleSheetOpen:true, sheetOpen:false },
-      21: { ...S, step:'maslak', branch:'register', maslak:'', sheetOpen:false },
-      22: { ...S, step:'maslak', branch:'register', maslak:'', errors:{ maslak:'Select the maslak followed by this masjid.' }, ctaFeedback:'Select a maslak to continue.', sheetOpen:false },
-      23: { ...S, step:'maslak', branch:'register', maslak:'Ahle Hadith', maslakSheetOpen:true, sheetOpen:false },
-      24: { ...S, step:'photo', branch:'register', photoTaken:false, sheetOpen:false },
-      25: { ...S, step:'photo', branch:'register', photoTaken:false, cameraMode:'masjid', cameraPermission:'granted', cameraStage:'ready', sheetOpen:false },
-      26: { ...S, step:'photo', branch:'register', photoTaken:false, cameraMode:'masjid', cameraPermission:'granted', cameraStage:'captured', sheetOpen:false },
-      27: { ...S, step:'photo', branch:'register', photoTaken:true, photoLocationAttached:true, sheetOpen:false },
-      28: { ...S, step:'photo', branch:'register', photoTaken:false, cameraMode:'masjid', cameraPermission:'granted', cameraStage:'ready', captureLocationStatus:'outside', sheetOpen:false },
-      29: { ...S, step:'photo', branch:'register', photoTaken:false, cameraMode:'masjid', cameraPermission:'granted', cameraStage:'ready', captureLocationStatus:'unavailable', sheetOpen:false },
-      30: { ...S, step:'selfie', branch:'register', selfieTaken:false, errors:{}, ctaFeedback:'', sheetOpen:false },
-      31: { ...S, step:'selfie', branch:'register', selfieTaken:false, cameraMode:'selfie', cameraPermission:'granted', cameraStage:'ready', sheetOpen:false },
-      32: { ...S, step:'selfie', branch:'register', selfieTaken:false, cameraMode:'selfie', cameraPermission:'granted', cameraStage:'captured', sheetOpen:false },
-      33: { ...S, step:'selfie', branch:'register', selfieTaken:true, sheetOpen:false },
-      34: { ...S, step:'review', branch:'register', photoTaken:true, photoLocationAttached:true, selfieTaken:true, sheetOpen:false },
-      35: { ...S, step:'review', branch:'register', photoTaken:true, photoLocationAttached:true, selfieTaken:true, submitStep:1, sheetOpen:false },
-      36: { ...S, step:'review', branch:'register', photoTaken:true, photoLocationAttached:true, selfieTaken:true, submitStep:2, sheetOpen:false },
-      37: { ...S, step:'review', branch:'register', photoTaken:true, photoLocationAttached:true, selfieTaken:true, submitStep:3, sheetOpen:false },
-      38: { ...S, step:'pending', branch:'register', sheetOpen:false },
-      39: { ...S, step:'rejected', branch:'register', sheetOpen:false }
+      11: { ...S, step:'register', branch:'register', pinDropped:false, locationPhase:'choice', locationResolved:false, sheetOpen:false },
+      12: { ...S, step:'register', branch:'register', pinDropped:false, locationPhase:'loading', locationResolved:false, sheetOpen:false },
+      13: { ...S, step:'register', branch:'register', pinDropped:false, locationPhase:'denied', locationResolved:false, sheetOpen:false },
+      14: { ...S, step:'register', branch:'register', pinDropped:false, locationPhase:'unavailable', locationResolved:false, sheetOpen:false },
+      15: { ...S, step:'register', branch:'register', pinDropped:false, locationPhase:'positioned', locationResolved:true, sheetOpen:false },
+      16: { ...S, step:'register', branch:'register', pinDropped:true, locationPhase:'confirmed', locationResolved:true, sheetOpen:false },
+      17: { ...S, step:'register', branch:'register', pinDropped:false, locationPhase:'manual', locationResolved:false, sheetOpen:false },
+      18: { ...R, step:'register', branch:'register', pincode:'400016', locationPhase:'choice', errors:{ masjidName:'Enter the masjid name.', address:'Enter an address or nearby landmark.', city:'Enter the town or locality.', stateVal:'Enter the state.', pinDropped:'Pin the masjid entrance on the map.' }, ctaFeedback:'Check the highlighted fields and try again.', sheetOpen:false },
+      19: { ...S, step:'register', branch:'register', stateSheetOpen:true, sheetOpen:false },
+      20: { ...S, step:'contact', branch:'register', sheetOpen:false },
+      21: { ...S, step:'contact', branch:'register', contactName:'', errors:{ contactName:'Enter the name of the person we should contact.' }, ctaFeedback:'Check the highlighted field and try again.', sheetOpen:false },
+      22: { ...S, step:'role', branch:'register', role:'', sheetOpen:false },
+      23: { ...S, step:'role', branch:'register', role:'', errors:{ role:'Select your role at this masjid.' }, ctaFeedback:'Select a role to continue.', sheetOpen:false },
+      24: { ...S, step:'role', branch:'register', role:'Chairman', roleSheetOpen:true, sheetOpen:false },
+      25: { ...S, step:'maslak', branch:'register', maslak:'', sheetOpen:false },
+      26: { ...S, step:'maslak', branch:'register', maslak:'', errors:{ maslak:'Select the maslak followed by this masjid.' }, ctaFeedback:'Select a maslak to continue.', sheetOpen:false },
+      27: { ...S, step:'maslak', branch:'register', maslak:'Ahle Hadith', maslakSheetOpen:true, sheetOpen:false },
+      28: { ...S, step:'photo', branch:'register', photoTaken:false, sheetOpen:false },
+      29: { ...S, step:'photo', branch:'register', photoTaken:false, cameraMode:'masjid', cameraPermission:'granted', cameraStage:'ready', sheetOpen:false },
+      30: { ...S, step:'photo', branch:'register', photoTaken:false, cameraMode:'masjid', cameraPermission:'granted', cameraStage:'captured', sheetOpen:false },
+      31: { ...S, step:'photo', branch:'register', photoTaken:true, photoLocationAttached:true, sheetOpen:false },
+      32: { ...S, step:'photo', branch:'register', photoTaken:false, cameraMode:'masjid', cameraPermission:'granted', cameraStage:'ready', captureLocationStatus:'outside', sheetOpen:false },
+      33: { ...S, step:'photo', branch:'register', photoTaken:false, cameraMode:'masjid', cameraPermission:'granted', cameraStage:'ready', captureLocationStatus:'unavailable', sheetOpen:false },
+      34: { ...S, step:'selfie', branch:'register', selfieTaken:false, errors:{}, ctaFeedback:'', sheetOpen:false },
+      35: { ...S, step:'selfie', branch:'register', selfieTaken:false, cameraMode:'selfie', cameraPermission:'granted', cameraStage:'ready', sheetOpen:false },
+      36: { ...S, step:'selfie', branch:'register', selfieTaken:false, cameraMode:'selfie', cameraPermission:'granted', cameraStage:'captured', sheetOpen:false },
+      37: { ...S, step:'selfie', branch:'register', selfieTaken:true, sheetOpen:false },
+      38: { ...S, step:'review', branch:'register', photoTaken:true, photoLocationAttached:true, selfieTaken:true, sheetOpen:false },
+      39: { ...S, step:'review', branch:'register', photoTaken:true, photoLocationAttached:true, selfieTaken:true, submitStep:1, sheetOpen:false },
+      40: { ...S, step:'review', branch:'register', photoTaken:true, photoLocationAttached:true, selfieTaken:true, submitStep:2, sheetOpen:false },
+      41: { ...S, step:'review', branch:'register', photoTaken:true, photoLocationAttached:true, selfieTaken:true, submitStep:3, sheetOpen:false },
+      42: { ...S, step:'pending', branch:'register', sheetOpen:false },
+      43: { ...S, step:'rejected', branch:'register', sheetOpen:false }
     };
     clearTimeout(this._t);
     this.setState({ history: [], stepDir: 'fwd', roleSheetOpen:false, maslakSheetOpen:false, stateSheetOpen:false, submitStep:0, ...(map[i] || { step:'home', sheetOpen:false }) });
@@ -491,6 +507,8 @@ class Component extends DCLogic {
       address:'',
       city:'',
       pinDropped:false,
+      locationPhase:'choice',
+      locationResolved:false,
       stateVal:mappedState || (s.stateAutoFilled ? '' : s.stateVal),
       stateAutoFilled:!!mappedState,
       errors:{ ...s.errors, pincode:undefined, stateVal:mappedState ? undefined : s.errors.stateVal },
@@ -503,17 +521,27 @@ class Component extends DCLogic {
   onContactNameChange = (e) => this.setState(s => ({ contactName:e.target.value, errors:{ ...s.errors, contactName:undefined }, ctaFeedback:'' }));
   togglePin = () => this.setState(s => ({
     pinDropped:true,
+    locationPhase:'confirmed',
     city:s.city || this.localityForPinnedEntrance(s.pincode),
     errors:{ ...s.errors, pinDropped:undefined, city:undefined },
     ctaFeedback:''
   }));
-  toggleLocationExpanded = () => this.setState(s => ({ locationExpanded:!s.locationExpanded }));
-  recenterLocation = () => this.setState(s => ({
-    pinDropped:true,
-    city:s.city || this.localityForPinnedEntrance(s.pincode),
-    errors:{ ...s.errors, pinDropped:undefined, city:undefined },
-    ctaFeedback:''
-  }));
+  recenterLocation = () => {
+    clearTimeout(this._locationTimer);
+    this.setState({ locationPhase:'loading', locationResolved:false, pinDropped:false, ctaFeedback:'' });
+    this._locationTimer = setTimeout(() => this.setState(s => ({
+      locationPhase:'positioned',
+      locationResolved:true,
+      pinDropped:false,
+      errors:{ ...s.errors, pinDropped:undefined },
+      ctaFeedback:''
+    })), 900);
+  };
+  chooseLocationManually = () => {
+    clearTimeout(this._locationTimer);
+    this.setState({ locationPhase:'manual', locationResolved:false, pinDropped:false, ctaFeedback:'' });
+  };
+  openLocationSettings = () => this.recenterLocation();
   selectMasjid = (id) => this.setState(s => ({ selectedMasjidId:id, errors:{ ...s.errors, claim:undefined }, ctaFeedback:'' }));
   goRegisterManually = () => {
     const mappedState = this.stateForPincode(this.state.pincode);
@@ -525,6 +553,8 @@ class Component extends DCLogic {
       stateAutoFilled:!!mappedState,
       locationResolved:false,
       locationLookupFailed:false,
+      locationPhase:'choice',
+      pinDropped:false,
       errors:{},
       ctaFeedback:'',
       history:[...s.history, s.step],
@@ -602,7 +632,7 @@ class Component extends DCLogic {
       }, step);
     }, step);
   };
-  doneHome = () => { window.location.href = '../home/Home Screen.dc.html'; };
+  doneHome = () => { window.location.href = '../home/Home Broadcast Studio.dc.html'; };
   togglePreview = () => this.setState(s => ({ step: s.step === 'pending' ? 'rejected' : 'pending' }));
   reapply = () => this.goTo('contact');
   updateDetails = () => this.goTo('register');
@@ -691,21 +721,21 @@ class Component extends DCLogic {
       searching:7,
       claimList:s.selectedMasjidId != null ? 9 : 8,
       claimEmpty:10,
-      register:s.stateSheetOpen ? 15 : (s.locationExpanded ? 14 : (s.locationLookupFailed ? 13 : (Object.keys(s.errors || {}).length ? 12 : 11))),
-      contact:(s.errors || {}).contactName ? 17 : 16,
-      role:s.roleSheetOpen ? 20 : ((s.errors || {}).role ? 19 : 18),
-      maslak:s.maslakSheetOpen ? 23 : ((s.errors || {}).maslak ? 22 : 21),
+      register:s.stateSheetOpen ? 19 : (Object.keys(s.errors || {}).length ? 18 : ({ choice:11, loading:12, denied:13, unavailable:14, positioned:15, confirmed:16, manual:17 }[s.locationPhase] || 11)),
+      contact:(s.errors || {}).contactName ? 21 : 20,
+      role:s.roleSheetOpen ? 24 : ((s.errors || {}).role ? 23 : 22),
+      maslak:s.maslakSheetOpen ? 27 : ((s.errors || {}).maslak ? 26 : 25),
       photo:s.cameraMode === 'masjid'
-        ? (s.captureLocationStatus === 'outside' ? 28 : (s.captureLocationStatus === 'unavailable' ? 29 : (s.cameraStage === 'captured' ? 26 : 25)))
-        : (s.photoTaken ? 27 : 24),
+        ? (s.captureLocationStatus === 'outside' ? 32 : (s.captureLocationStatus === 'unavailable' ? 33 : (s.cameraStage === 'captured' ? 30 : 29)))
+        : (s.photoTaken ? 31 : 28),
       selfie:s.cameraMode === 'selfie'
-        ? (s.cameraStage === 'captured' ? 32 : 31)
-        : (s.selfieTaken ? 33 : 30),
+        ? (s.cameraStage === 'captured' ? 36 : 35)
+        : (s.selfieTaken ? 37 : 34),
       // Submitting is review's own state, so it rings review's submit frames rather than an
       // outcome of its own.
-      review:s.submitStep > 0 ? 34 + s.submitStep : 34
+      review:s.submitStep > 0 ? 38 + s.submitStep : 38
     };
-    const outcomeIdxMap = { pending:38, rejected:39 };
+    const outcomeIdxMap = { pending:42, rejected:43 };
     let entryActive = -1, sheetActive = -1, wizardActive = -1, outcomeActive = -1;
     if (isEntry && s.sheetOpen) sheetActive = s.sheetTab === 'follow' ? 4 : 3;
     else if (isEntry) entryActive = { home:0, salaah:1, profile:2 }[s.step];
@@ -779,8 +809,8 @@ class Component extends DCLogic {
         onMasjidNameChange: this.onMasjidNameChange, onAddressChange: this.onAddressChange, onCityChange: this.onCityChange,
         stateSheetOpen:s.stateSheetOpen, stateOptions, onOpenStateSheet:this.openStateSheet, onSelectState:this.selectState,
         pinDropped: s.pinDropped, onTogglePin: this.togglePin,
-        locationExpanded:s.locationExpanded, locationResolved:s.locationResolved, locationLookupFailed:s.locationLookupFailed,
-        onToggleLocationExpanded:this.toggleLocationExpanded, onRecenterLocation:this.recenterLocation,
+        locationPhase:s.locationPhase, locationResolved:s.locationResolved, locationLookupFailed:s.locationLookupFailed,
+        onRecenterLocation:this.recenterLocation, onChooseLocationManually:this.chooseLocationManually, onOpenLocationSettings:this.openLocationSettings,
         contactName: s.contactName, onContactNameChange: this.onContactNameChange,
         onOpenRoleSheet: this.openRoleSheet, roleSheetOpen: s.roleSheetOpen, roleOptions, onSelectRole: this.selectRole,
         onOpenMaslakSheet: this.openMaslakSheet, maslakSheetOpen: s.maslakSheetOpen, maslakOptions, onSelectMaslak: this.selectMaslak,

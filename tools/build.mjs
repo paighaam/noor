@@ -57,11 +57,16 @@ for (const rel of pages) {
   dirCount[dir] = (dirCount[dir] || 0) + 1;
 }
 const routeMap = {};
+const fixedRoutes = {
+  'home/Home Broadcast Studio.dc.html': '/home/home-broadcast-studio/',
+  'onboarding/Onboarding.dc.html': '/onboarding/',
+};
 for (const rel of pages) {
   const dir = rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : '';
   const base = slug(rel.slice(rel.lastIndexOf('/') + 1).replace(/\.dc\.html$/, ''));
   let route;
-  if (dir === '') route = base === 'index' ? '/' : `/${base}/`;
+  if (fixedRoutes[rel]) route = fixedRoutes[rel];
+  else if (dir === '') route = base === 'index' ? '/' : `/${base}/`;
   else if (dirCount[dir] > 1) route = `/${dir}/${base}/`;
   else route = `/${dir}/`;
   routeMap[rel] = route;

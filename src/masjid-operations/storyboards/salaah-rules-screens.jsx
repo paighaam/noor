@@ -240,30 +240,38 @@ function SrlScanStage({ stage, onClose, onCapture, onRetry }) {
 }
 
 // The receipt. A counts line, one pill per prayer in day order, the column question, then exactly
-// one affirmative. No sentences: the strip this replaced was one paragraph that grew a clause per
-// condition, and committees read it as noise.
+// one affirmative. Recovery explanations live with the receipt, where the committee makes its
+// decision, rather than growing an in-body strip over the timeline.
 //
 // Every prayer gets a pill, including the ones the board did not show. A pill is a reference, so its
 // time drops the meridiem, and it shows what the board PRINTED — a jamaat column prints the jamaat.
-// Amber never letters here: the ok pills keep the ordinary ink and locate with the action tint, red
-// says the reading cannot exist and may letter, and an anchored prayer stays quiet because nothing
-// about it is wrong.
-function SrlScanSheet({ open, rows, counts, usable, meaning, needMeaning, onMeaning, onAdd, onDiscard, onRescan }) {
+// Amber never letters here: ok pills locate with the action tint; red borders require attention.
+// The reason distinguishes a timing-rule restriction from a reading outside today's window.
+function SrlScanSheet({ open, rows, counts, usable, meaning, needMeaning, onMeaning, onAdd, onDiscard, onRescan, onReviewRules }) {
   const { Dialog } = window;
   if (!open || !Dialog) return null;
+  const ruleBlocked = rows.some((r) => r.kind === 'anchored');
+  const outsideWindow = rows.some((r) => r.kind === 'bad');
+  const alreadySet = rows.some((r) => r.kind === 'same');
+  const primary = !meaning
+    ? { text: 'Add to draft', onClick: onAdd }
+    : usable
+      ? { text: `Add ${usable} to draft`, onClick: onAdd }
+      : ruleBlocked || outsideWindow
+        ? { text: 'Review timing rules', onClick: onReviewRules }
+        : alreadySet && !outsideWindow
+          ? { text: 'Back to timings', onClick: onDiscard }
+          : { text: 'Set times manually', onClick: onDiscard };
   return (
     <Dialog
       mode="sheet"
+      className="scan-review-sheet"
       isOpen
       onClose={onDiscard}
       title="Board read"
       description={counts}
-      primary={usable
-        ? { text: `Add ${usable} to draft`, onClick: onAdd }
-        // Nothing to add is not a dead end and never a dead button: the honest affirmative is the
-        // hand-over to the day, with the rescan one step below it.
-        : { text: 'Set them by hand instead', onClick: onDiscard }}
-      secondary={usable
+      primary={primary}
+      secondary={usable || !meaning || ruleBlocked || alreadySet
         ? { text: 'Discard reading', onClick: onDiscard }
         : { text: 'Scan again', onClick: onRescan }}
     >
@@ -273,14 +281,19 @@ function SrlScanSheet({ open, rows, counts, usable, meaning, needMeaning, onMean
             {r.label}
             <em>{r.kind === 'mut' ? '—' : srFmtShort(r.printed)}</em>
             {r.kind === 'ok' ? <span className="mi" data-i="check" aria-hidden="true"></span> : null}
-            {r.kind === 'bad' ? <small>outside window</small> : null}
-            {/* Read fine, inside its window, and still unlandable: this prayer follows its own start
-                and stores no clock time. The pill says so and the prayer's rule page is where that
-                decision lives. */}
-            {r.kind === 'anchored' ? <small className="is-quiet">{r.note}</small> : null}
+            {r.kind === 'bad' ? <small>Outside window</small> : null}
+            {r.kind === 'anchored' ? <small>Rule: {r.note}</small> : null}
+            {r.kind === 'same' ? <small>{r.note}</small> : null}
           </span>
         ))}
       </div>
+      {ruleBlocked ? (
+        <div className="scan-sheet-help">
+          <p>Prayers marked “Rule” follow their calculated starts. Review their timing rules to use the board times.</p>
+          {usable > 0 ? <button type="button" className="btn btn-link" onClick={onReviewRules}>Review timing rules</button> : null}
+        </div>
+      ) : null}
+      {outsideWindow ? <div className="scan-sheet-help">{rows.filter((r) => r.kind === 'bad').map((r) => <p key={r.key}>{r.note}</p>)}</div> : null}
       <div className={`scan-sheet-meaning${needMeaning ? ' is-asking' : ''}`} role="radiogroup" aria-label="What the scanned column shows">
         <span className="eyebrow">What does that column show?</span>
         <div>
@@ -641,6 +654,7 @@ function SrlTimingsBody({ data }) {
         onAdd={scan.begin}
         onDiscard={onDiscardScan}
         onRescan={onOpenScan}
+        onReviewRules={onOpenRules}
       />
 
       <SrlScanCapsule walk={scan.walk} bottom={floatBottom} />

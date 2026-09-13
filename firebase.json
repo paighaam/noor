@@ -4,6 +4,13 @@
     "public": "dist",
     "trailingSlash": true,
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "redirects": [
+      {
+        "source": "/home/home-screen{,/**}",
+        "destination": "/home/home-broadcast-studio/",
+        "type": 301
+      }
+    ],
     "headers": [
       {
         "source": "**/*.@(js|jsx|css|webp|png|jpg|jpeg|svg|gif|ttf|woff|woff2|ico)",

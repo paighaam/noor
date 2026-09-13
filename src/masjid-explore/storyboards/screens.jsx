@@ -14,10 +14,19 @@ const MASJIDS = [
   { letter: 'W', name: 'Masjid E Wheel & Axle', area: 'Bengaluru', pin: '560064', dist: '2.0km', prayer: 'Isha', azaan: '8:08 PM', iqama: '8:23 PM', pos: { left: '34%', top: '29%' } },
 ];
 
-const SHEET_H = 262; // px — reserved height for the bottom sheet (used to offset the map FAB)
+const SHEET_H = 324; // px — the tallest rendered bottom sheet; the location control sits above it. 262 left it half hidden behind the sheet.
 const NEARBY_COUNT = MASJIDS.length * 8 + 4; // headline count, shared by both views
 const masjidCardTransitionName = (masjid) =>
   `masjid-card-${masjid.pin}-${masjid.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
+// Page indices a windowed pager indicator shows — at most `maxVisible`, centred on the current
+// page, sliding as it changes. Mirrors `pagerIndicatorWindow` in the Compose PagerIndicator.
+function pagerIndicatorWindow(currentIdx, count, maxVisible = 5) {
+  if (count <= 0) return [];
+  if (count <= maxVisible) return Array.from({ length: count }, (_, i) => i);
+  const start = Math.min(Math.max(currentIdx - Math.floor((maxVisible - 1) / 2), 0), count - maxVisible);
+  return Array.from({ length: maxVisible }, (_, i) => start + i);
+}
 
 // Circular glass control that floats over the map imagery.
 // Literal translucent white + white glyph are whitelisted (on-color over imagery).
@@ -35,6 +44,38 @@ function GlassBtn({ icon, onClick, ariaLabel }) {
       }}
     >
       <span className="mi" style={{ color: '#fff' }} data-i={icon}></span>
+    </button>
+  );
+}
+
+// The map's one location control (MapLocationButton.kt). A full-size filled `.ib` rather than a
+// glass control: it floats over map tiles that are usually LIGHT, where a translucent white
+// circle with a white glyph is invisible — which is what users reported (2026-09-08).
+// Three states, one place:
+//   ready       — filled brand circle, `my_location`; tap recentres on the device fix.
+//   locating    — same circle, the button-scale spinner replaces the glyph and taps are refused.
+//   unavailable — card surface with a red `location_disabled`: permission is denied or location
+//                 services are off. Tap requests permission or opens Settings — it never does
+//                 nothing silently.
+function LocateBtn({ state = 'ready', onClick, style }) {
+  const unavailable = state === 'unavailable';
+  const locating = state === 'locating';
+  const label = unavailable ? 'Location unavailable. Tap to enable' : locating ? 'Finding your location' : 'My location';
+  return (
+    <button
+      className={`ib ${unavailable ? 'ib-tonal' : 'ib-filled'}`}
+      onClick={onClick}
+      aria-label={label}
+      aria-busy={locating || undefined}
+      style={{
+        ...(unavailable ? { background: 'var(--color-surface-card)', borderColor: 'var(--color-neutral-border)', boxShadow: '0 8px 20px -8px rgba(0,0,0,0.35)' } : null),
+        ...(locating ? { cursor: 'progress' } : null),
+        ...style,
+      }}
+    >
+      {locating
+        ? <span className="btn-spinner" style={{ width: 20, height: 20 }} />
+        : <span className="mi" style={unavailable ? { color: 'var(--color-status-error)' } : null} data-i={unavailable ? 'location_disabled' : 'my_location'}></span>}
     </button>
   );
 }
@@ -152,6 +193,7 @@ function ExploreMapScreen({
   onQr,
   onOpenList,
   onRecenter,
+  locationState = 'ready', // 'ready' | 'locating' | 'unavailable' — see LocateBtn
   cardTransitionEnabled = false,
 }) {
   const list = masjids || MASJIDS;
@@ -161,15 +203,8 @@ function ExploreMapScreen({
 
       <ExploreAppBar onBack={onBack} onSearch={onSearch} onQr={onQr} />
 
-      {/* Recenter FAB — sits just above the sheet */}
-      <button
-        className="ib md"
-        onClick={onRecenter}
-        aria-label="Recenter"
-        style={{ position: 'absolute', right: 16, bottom: SHEET_H + 14, zIndex: 20, background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', boxShadow: '0 2px 10px rgba(0,0,0,0.28)' }}
-      >
-        <span className="mi" style={{ color: '#fff' }} data-i="my_location"></span>
-      </button>
+      {/* Location control — sits just above the sheet */}
+      <LocateBtn state={locationState} onClick={onRecenter} style={{ position: 'absolute', right: 16, bottom: SHEET_H + 14, zIndex: 20 }} />
 
       {/* Bottom sheet */}
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20, background: 'color-mix(in oklab, var(--color-surface-primary) 92%, transparent)', backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)', borderTop: '1px solid var(--color-neutral-border)', borderRadius: '24px 24px 0 0', padding: '10px 16px 22px', boxSizing: 'border-box' }}>
@@ -202,12 +237,14 @@ function ExploreMapScreen({
           </div>
         </div>
 
-        {/* Dots */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 14 }}>
-          {list.map((m, i) => {
+        {/* Dots — a sliding window of at most five (PagerIndicator.kt `pagerIndicatorWindow`):
+            forty results filled the sheet with dots; the edge dot shrinks to hint at more beyond. */}
+        <div className="ind" style={{ justifyContent: 'center', marginTop: 14 }}>
+          {pagerIndicatorWindow(selectedIdx, list.length).map((i, pos, win) => {
             const active = i === selectedIdx;
+            const edge = (pos === 0 && win[0] > 0) || (pos === win.length - 1 && win[win.length - 1] < list.length - 1);
             return (
-              <div key={i} onClick={() => onSelectMasjid && onSelectMasjid(i)} style={{ height: 4, width: active ? 20 : 6, borderRadius: 2, background: active ? 'var(--color-info-primary)' : 'var(--color-info-faint)', transition: 'width 250ms', cursor: 'pointer' }} />
+              <div key={i} onClick={() => onSelectMasjid && onSelectMasjid(i)} className={`dot${active ? ' active' : ''}${edge ? ' edge' : ''}`} style={{ cursor: 'pointer' }} />
             );
           })}
         </div>

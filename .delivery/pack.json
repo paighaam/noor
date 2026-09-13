@@ -1,0 +1,20 @@
+{
+  "pack": "paigham-delivery",
+  "protocol": 1,
+  "version": "2026-08-27",
+  "source": "Paigham workspace shared delivery pack",
+  "files": {
+    ".agents/rules/delivery.md": "1647cffb5391ab2aa458f1296e4f62799834b2e8dfde4a3df1f124c3f650b333",
+    ".agents/rules/delivery-profiles.md": "815739bd517ac18e37651637b6e109b21d8e10e701670b6547de860db4f931a9",
+    ".agents/skills/paigham-delivery/SKILL.md": "267aaf7eccdbc43243c5a82bb5421a027dde57de80987a328b1b07b37ddc6d9d",
+    ".agents/skills/paigham-review/SKILL.md": "75dc703544a6ea831d6cac9c28248d97e3260a8692e333920c95b7c7f6ee6d7d",
+    "tools/delivery/gate.py": "a5d2fb8f825a36f35bbabf45d111bd257e49fae98c17de318d62e37fdd7d98ee",
+    "tools/delivery/test_gate.py": "742ca0bb507c006053f34fd97590ed3278ba24d9bfe154b14729777f6269006d",
+    "tools/delivery/scan-secrets-and-pii.mjs": "94ed33a66becea6329e51531ad9b3a38dd540891d5b84412d9c54a8676a75df3",
+    "tools/delivery/README.md": "fbf6ddbccb98b727db3488c5a4a00564709c9fa3c66ac9c6bed831f58092132e",
+    ".delivery/task-template.json": "bf8aacc55e39cd2cbe10a981a4ea6210bddc09a79fd5d7c542b6ad9ed2126d83",
+    ".github/workflows/delivery-protocol.yml": "7811940af3d825637e7cda32c4238ba6d1e3e0f5c3cfd0a4a22f6bd0c68af22e",
+    "tools/delivery/.gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b"
+  },
+  "assurance": "Checksums detect distribution drift, not independent review or authenticity."
+}

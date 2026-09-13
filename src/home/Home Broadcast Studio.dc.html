@@ -154,6 +154,8 @@
                       notif-nudge="{{ homeNotifNudge }}"
                       on-close-notif-nudge="{{ closeHomeNotifNudge }}"
                       on-allow-notif="{{ allowNotif }}"
+                      invite-nudge="{{ homeInviteNudge }}"
+                      on-view-invitation="{{ goInvitations }}"
                       tracking-loading="{{ homeTrackingLoading }}"
                       hint-size="100%,100%">
             </x-import>
@@ -245,6 +247,8 @@
                       show-managed-masjid="{{ profileManagedMasjid }}"
                       managed-count="{{ profileManagedCount }}"
                       managed-attention="{{ profileManagedAttention }}"
+                      pending-invitations="{{ profilePendingInvitations }}"
+                      on-view-invitations="{{ goInvitations }}"
                       masjid-name="{{ homeMasjidLabel }}"
                       on-my-masjids="{{ goMyMasjids }}"
                       on-manage-masjid="{{ goMasjidAdmin }}"
@@ -371,6 +375,9 @@ class Component extends DCLogic {
     masjidSheetOpen: false,      // rich "Pick your masjid, stay in sync" sheet
     homeNotifOff: false,         // signed in with masjid but notifications off (notif nudges)
     homeNotifNudge: false,       // Home inline "Enable Notifications" nudge visible
+    // A committee invitation addressed to this user, or null. Set per frame like managedAttention:
+    // an invitation card inherited from another frame is a claim nobody made.
+    homeInviteNudge: null,
     notifSheetOpen: false,       // rich "Stay in the loop" sheet
     guestSignInSheetOpen: false, // guest "Sign in to Paigham" interrupt sheet (Qaum/Salaah)
     homePrayers: { Fajr: true, Zohar: true, Asr: true, Maghrib: true, Isha: false },
@@ -420,7 +427,9 @@ class Component extends DCLogic {
     managedRoleTitle: 'Chairman',
     // Pending committee invitations. Explicit per frame, never inherited: an invitation claim
     // left over from the previously selected frame is a claim about a masjid nobody made.
-    managedAttention: 0
+    managedAttention: 0,
+    // Invitations addressed to THIS user (the invitee side); drives the Profile row.
+    profilePendingInvitations: 0
   };
 
   componentDidMount() {
@@ -468,6 +477,8 @@ class Component extends DCLogic {
       else if (hash === '#home-console-unresolved') this.syncLiveStateToFrame(48);
       else if (hash === '#home-console-revoked') this.syncLiveStateToFrame(49);
       else if (hash === '#home-console-view-only') this.syncLiveStateToFrame(50);
+      else if (hash === '#home-invited') this.syncLiveStateToFrame(51);
+      else if (hash === '#profile-invited') this.syncLiveStateToFrame(52);
     }
   }
 
@@ -542,7 +553,11 @@ class Component extends DCLogic {
       { activeTab: 0, profileHasMasjid: true, profileManagedMasjid: true, homeHeroSel: null, homeActivePrayer: 'Maghrib', managedPhase: 'summary-error', managedCanSend: true },
       { activeTab: 0, profileHasMasjid: true, profileManagedMasjid: true, homeHeroSel: null, homeActivePrayer: 'Maghrib', managedPhase: 'unresolved', managedCanSend: true },
       { activeTab: 0, profileHasMasjid: true, profileManagedMasjid: true, homeHeroSel: null, homeActivePrayer: 'Maghrib', managedPhase: 'revoked' },
-      { activeTab: 0, profileHasMasjid: true, profileManagedMasjid: true, homeHeroSel: null, homeActivePrayer: 'Maghrib', managedAccess: 'View only', managedRoleTitle: 'Trustee' }
+      { activeTab: 0, profileHasMasjid: true, profileManagedMasjid: true, homeHeroSel: null, homeActivePrayer: 'Maghrib', managedAccess: 'View only', managedRoleTitle: 'Trustee' },
+      // 51-52 · The invitee's side: a committee invitation reaches Home and Profile. The user
+      // follows a masjid but manages none yet — accepting is what would give them a console.
+      { activeTab: 0, homeHeroSel: null, homeActivePrayer: 'Asr', homeInviteNudge: { masjid: 'Masjid E Bilal', role: 'Secretary', inviter: 'Syed Usama', daysLeft: 6, count: 1 }, profilePendingInvitations: 1 },
+      { activeTab: 4, profileHasMasjid: true, profilePendingInvitations: 1 }
     ];
     clearInterval(this._audioTimer);
     this.setState({
@@ -555,6 +570,8 @@ class Component extends DCLogic {
       masjidSheetOpen: false,
       homeNotifOff: false,
       homeNotifNudge: false,
+      homeInviteNudge: null,
+      profilePendingInvitations: 0,
       notifSheetOpen: false,
       guestSignInSheetOpen: false,
       qaumNudgeClosed: false,
@@ -590,6 +607,7 @@ class Component extends DCLogic {
       if (s.homeTrackingLoading) return 37;
       if (s.homeFollowNudge) return 20;
       if (s.homeNotifNudge) return 24;
+      if (s.homeInviteNudge) return 51;
       const p = (s.homeActivePrayer || 'Maghrib').toLowerCase();
       if (p === 'fajr') return 8;
       if (p === 'zohar') return 9;
@@ -612,6 +630,7 @@ class Component extends DCLogic {
     if (tabIndex === 3 && s.homeNotifOff) return s.notifSheetOpen ? 27 : 26;
     if (tabIndex === 4 && !s.profileHasMasjid) return 38;
     if (tabIndex === 4 && s.profileManagedMasjid) return 40;
+    if (tabIndex === 4 && s.profilePendingInvitations) return 52;
     return tabIndex + 3;
   }
 
@@ -703,6 +722,8 @@ class Component extends DCLogic {
       masjidSheetOpen: false,
       homeNotifOff: false,
       homeNotifNudge: false,
+      homeInviteNudge: null,
+      profilePendingInvitations: 0,
       notifSheetOpen: false,
       guestSignInSheetOpen: false,
       qaumNudgeClosed: false,
@@ -869,6 +890,12 @@ class Component extends DCLogic {
     window.location.href = '../masjid-operations/Masjid Console.dc.html#members';
   };
 
+  // The invitee's inbox lives on the console board (#invitations): the Home card, the Profile
+  // row and the push all land on the same screen.
+  goInvitations = () => {
+    window.location.href = '../masjid-operations/Masjid Console.dc.html#invitations';
+  };
+
   // Qaum's send shortcut skips the console and lands straight in compose, targeting the
   // primary managed masjid. The target is changeable inside the wizard, so a member who
   // manages several masjids never pays a picker before starting.
@@ -953,6 +980,7 @@ class Component extends DCLogic {
       homeLikes: s.homeLikes,
       homeNotifOn: s.homeNotifOn,
       homeTrackingLoading: s.homeTrackingLoading,
+      homeInviteNudge: s.homeInviteNudge,
       toggleSuhoor: this.toggleSuhoor,
       toggleIftaar: this.toggleIftaar,
       toggleHomePrayer: this.toggleHomePrayer,
@@ -971,6 +999,7 @@ class Component extends DCLogic {
       goMyMasjids: this.goMyMasjids,
       goMasjidAdmin: this.goMasjidAdmin,
       goMasjidCommittee: this.goMasjidCommittee,
+      goInvitations: this.goInvitations,
       goZakaat: this.goZakaat,
       goQibla: this.goQibla,
 
@@ -1018,6 +1047,7 @@ class Component extends DCLogic {
       profileHasMasjid: s.profileHasMasjid,
       profileManagedCount: 2,
       profileManagedAttention: s.managedAttention,
+      profilePendingInvitations: s.profilePendingInvitations,
       // The console entry appears on Home, Qaum and Profile for a committee member.
       // The name is the one thing cached access does not carry, so the phases that are still
       // waiting on it genuinely have none.

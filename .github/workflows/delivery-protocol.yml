@@ -1,0 +1,27 @@
+name: Paigham delivery protocol
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  protocol:
+    name: Delivery tool self-tests (not feature acceptance)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test evidence validation and refusal behavior
+        run: python3 tools/delivery/test_gate.py --junit "$RUNNER_TEMP/delivery-protocol.xml"
+      - name: Retain protocol test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: delivery-protocol-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/delivery-protocol.xml
+          if-no-files-found: error
+          retention-days: 14

@@ -42,7 +42,7 @@
 
     membersStatus: 'loaded', // 'loading' | 'loaded' | 'error'
     membersEmpty: false,
-    withdrawingId: null, // invitation withdrawal in flight
+    withdrawingId: null, // the INVITED row whose withdrawal is in flight
     memberId: null, // the member whose permission screen is open
     ownerId: 'm1',
     transferringId: null,
@@ -78,6 +78,16 @@
     // { id, kind: 'accept' | 'decline' } — the kind is what lets the capsule name itself.
     invitationActioning: null,
     invitationAcceptedId: null, // accepted just now → the card offers the console
+    // The signed-in member has never given a name. Accepting then asks for it first (Personal
+    // Details, the onboarding screen), because a committee row is a name and a role — an accepted
+    // member with no name is a blank row on every admin's committee list.
+    needsDetails: false,
+    // The details step in progress: { id, name, gender, nameError, genderError, saving, shakeKey }.
+    // `saving` walks 'details' → 'following' → 'accepting', or 'error'; null while the form is idle.
+    invitationDetails: null,
+    // The LAST live invitation was just accepted: nothing is left to come back to, so the inbox
+    // hands over to that masjid's console behind a named loader instead of an accepted card.
+    invitationHandoff: null,
 
     openMenu: null,
     snack: null,
@@ -219,6 +229,17 @@
         invitationsEmpty: !!s.invitationsEmpty,
         invitationActioning: s.invitationActioning || null,
         invitationAcceptedId: s.invitationAcceptedId || null,
+        needsDetails: !!s.needsDetails,
+        // What the reader typed is content, not state: only which step is showing takes part.
+        invitationDetails: s.invitationDetails
+          ? {
+              id: s.invitationDetails.id,
+              saving: s.invitationDetails.saving || null,
+              nameError: !!s.invitationDetails.nameError,
+              genderError: !!s.invitationDetails.genderError,
+            }
+          : null,
+        invitationHandoff: s.invitationHandoff || null,
       });
     }
 
@@ -431,6 +452,9 @@
         items: invitations,
         actioning: s.invitationActioning,
         acceptedId: s.invitationAcceptedId,
+        needsDetails: !!s.needsDetails,
+        details: s.invitationDetails || null,
+        handoffId: s.invitationHandoff || null,
       },
 
       // Handlers pass straight through (absent on static frames), so adding a screen
@@ -542,6 +566,16 @@
     { group: 'invitations', name: 'Declining', screen: 'invitations', state: { route: 'invitations', invitationActioning: { id: 'i1', kind: 'decline' } } },
     { group: 'invitations', name: 'Accepted · open console', screen: 'invitations', state: { route: 'invitations', invitationAcceptedId: 'i1', snack: { kind: 'invitation-accepted', message: 'Invitation accepted' } } },
     { group: 'invitations', name: 'Decline confirmation', screen: 'invitations', state: { route: 'invitations', confirm: { kind: 'declineInvitation', id: 'i2' } } },
+    // A member with no name yet: Accept asks for it first, on the onboarding Personal Details
+    // screen, then saves, follows the masjid and accepts as one submit.
+    { group: 'invitations', name: 'Accept · name needed', screen: 'invitations', state: { route: 'invitations', needsDetails: true, invitationDetails: { id: 'i1', name: '', gender: null, nameError: false, genderError: false, saving: null, shakeKey: 0 } } },
+    { group: 'invitations', name: 'Accept · details invalid', screen: 'invitations', state: { route: 'invitations', needsDetails: true, invitationDetails: { id: 'i1', name: '', gender: null, nameError: true, genderError: true, saving: null, shakeKey: 1 } } },
+    { group: 'invitations', name: 'Accept · saving details', screen: 'invitations', state: { route: 'invitations', needsDetails: true, invitationDetails: { id: 'i1', name: 'Toufeeq Ahamed', gender: 'male', nameError: false, genderError: false, saving: 'details', shakeKey: 0 } } },
+    { group: 'invitations', name: 'Accept · following the masjid', screen: 'invitations', state: { route: 'invitations', needsDetails: true, invitationDetails: { id: 'i1', name: 'Toufeeq Ahamed', gender: 'male', nameError: false, genderError: false, saving: 'following', shakeKey: 0 } } },
+    { group: 'invitations', name: 'Accept · accepting', screen: 'invitations', state: { route: 'invitations', needsDetails: true, invitationDetails: { id: 'i1', name: 'Toufeeq Ahamed', gender: 'male', nameError: false, genderError: false, saving: 'accepting', shakeKey: 0 } } },
+    { group: 'invitations', name: 'Accept · save failed', screen: 'invitations', state: { route: 'invitations', needsDetails: true, invitationDetails: { id: 'i1', name: 'Toufeeq Ahamed', gender: 'male', nameError: false, genderError: false, saving: 'error', shakeKey: 0 } } },
+    // Nothing left in the inbox after this accept: straight to the console, behind a loader.
+    { group: 'invitations', name: 'Last accepted · to the console', screen: 'invitations', state: { route: 'invitations', invitationHandoff: 'i2' } },
     { group: 'invitations', name: 'Last day', screen: 'invitations', state: { route: 'invitations', invitationActioning: { id: 'i2', kind: 'accept' } } },
     { group: 'invitations', name: 'No invitations', screen: 'invitations', state: { route: 'invitations', invitationsEmpty: true } },
     { group: 'invitations', name: 'Load failed · retry', screen: 'invitations', state: { route: 'invitations', invitationsStatus: 'error' } },

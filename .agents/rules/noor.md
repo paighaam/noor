@@ -11,6 +11,7 @@ adapters only and must not duplicate these rules.
 Always read:
 
 - `agent-behavior.md`
+- `delivery.md` (select the matching verification profile)
 - `ai-communication.md`
 - `no-auto-md-files.md`
 - `self-improve.md`

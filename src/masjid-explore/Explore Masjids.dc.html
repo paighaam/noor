@@ -224,7 +224,7 @@ class Component extends DCLogic {
   });
   pickSuggestion = (pin) => this.setState({ pincodeQuery: pin, pincodeFocused: false });
 
-  goBack = () => { window.location.href = '../home/Home Screen.dc.html'; };
+  goBack = () => { window.location.href = '../home/Home Broadcast Studio.dc.html'; };
 
   restart = () => { clearTimeout(this._qrTimer); this.setState({ stage: 'map', stepDir: 'back', selectedIdx: 0, followed: {}, loginSheetOpen: false, qrScanning: true, qrPermissionDenied: false, pincodeQuery: '', pincodeFocused: false }); };
 

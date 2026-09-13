@@ -267,6 +267,11 @@
       config: withRule(SR_RECOMMENDED, 'zohar', { variant: ON_TIME, iqamaDelay: 15 }),
       status: 'PUBLISHED', origin: 'published',
     },
+    // Review fixture, not a live masjid configuration: a successful scan can be blocked by rules.
+    allAtStart: {
+      config: Object.fromEntries(ORDER.map(({ key }) => [key, { variant: ON_TIME, iqamaDelay: 15 }])),
+      status: 'PUBLISHED', origin: 'published',
+    },
     fixedMaghrib: {
       config: withRule(SR_RECOMMENDED, 'maghrib', { variant: FIXED, salaahTime: '18:52', iqamaDelay: 5 }),
       status: 'PUBLISHED', origin: 'published',
@@ -417,6 +422,7 @@
   // window, prayers glare lost entirely, and Maghrib, which no clock time can be set for.
   const SR_BOARD = {
     full: { fajr: '05:35', zohar: '13:50', asr: '16:45', maghrib: '18:58', isha: '20:30', jumah: '13:30' },
+    fivePrayer: { fajr: '05:30', zohar: '13:15', asr: '17:25', maghrib: '18:53', isha: '20:25' },
     // Zohar and Maghrib are the two a real board most often loses to glare; Fajr's leading digit
     // came back wrong, which is an ordinary misread rather than an edge case.
     partial: { fajr: '04:20', asr: '16:45', isha: '20:30', jumah: '13:30' },
@@ -450,7 +456,7 @@
   // The receipt, one entry per prayer in day order — including the prayers the board did not show,
   // because silence about a prayer is what makes a reader distrust the four that did.
   //
-  // Four outcomes, and the walk lands exactly one of them. `bad` is a reading that cannot exist:
+  // One outcome per prayer, and the walk lands only `ok`. `bad` conflicts with today's window:
   // the same two bounds `srFault` enforces everywhere else, so the sheet cannot promise a value the
   // day would then refuse. `anchored` is this section's own outcome and has no equivalent on a
   // times-only editor: the reading is fine, but the prayer follows its own start and stores no clock
@@ -460,7 +466,7 @@
     if (!s.scanProposal) return [];
     const rowByKey = {};
     rows.forEach((r) => { rowByKey[r.key] = r; });
-    const reading = scanReading(s.scanProposal, s.scanColumnMeaning || 'jamaat', rowByKey);
+    const reading = scanReading(s.scanProposal, s.scanColumnMeaning, rowByKey);
     if (!reading) return [];
     return ORDER.map(({ key, label }) => {
       const read = reading[key];
@@ -470,11 +476,22 @@
       const entry = {
         key, label, printed: read.printed, azaan: read.azaan, iqama: read.iqama,
       };
+      if (!s.scanColumnMeaning) return Object.assign(entry, { kind: 'unlabelled' });
+      // A rule restriction must not hide a real window conflict. Both the receipt and walk use
+      // this outcome; the count cannot describe a different reason from the pill.
+      const fault = srFault(prayer, { azaan: read.azaan, jamaat: read.azaan + read.iqama });
+      if (fault) return Object.assign(entry, {
+        kind: 'bad',
+        note: s.scanColumnMeaning === 'jamaat' && prayer && read.azaan < prayer.opens
+          ? `${label}: the saved ${read.iqama}-minute gap puts azaan at ${fmt(read.azaan)}, before the ${fmt(prayer.opens)} prayer start.`
+          : fault.text.startsWith(label) ? fault.text : `${label}: ${fault.text}`,
+      });
+      if (row.resolved.azaan === read.azaan && row.resolved.jamaat === read.azaan + read.iqama) {
+        return Object.assign(entry, { kind: 'same', note: 'Already set' });
+      }
       if ((row.cfg || {}).variant === ON_TIME) {
         return Object.assign(entry, { kind: 'anchored', note: srRuleCopy(key, label, row.cfg).short });
       }
-      const fault = srFault(prayer, { azaan: read.azaan, jamaat: read.azaan + read.iqama });
-      if (fault) return Object.assign(entry, { kind: 'bad', note: fault.text });
       return Object.assign(entry, { kind: 'ok' });
     });
   };
@@ -560,12 +577,16 @@
     const scanUsable = scan.filter((r) => r.kind === 'ok');
     const scanFaulted = scan.filter((r) => r.kind === 'bad');
     const scanAnchored = scan.filter((r) => r.kind === 'anchored');
+    const scanSame = scan.filter((r) => r.kind === 'same');
     const scanMissed = scan.filter((r) => r.kind === 'mut');
     // Zeroes stay silent: `seen by 0` and `0 not read` are the same lie.
     const scanCounts = [
+      scan.length ? `${scan.length - scanMissed.length} read` : null,
+      scan.some((r) => r.kind === 'unlabelled') ? 'choose a column' : null,
       scanUsable.length ? `${scanUsable.length} usable` : null,
       scanFaulted.length ? `${scanFaulted.length} outside ${scanFaulted.length === 1 ? 'its' : 'their'} window` : null,
-      scanAnchored.length ? `${scanAnchored.length} ${scanAnchored.length === 1 ? 'follows its prayer' : 'follow their prayers'}` : null,
+      scanAnchored.length ? `${scanAnchored.length} blocked by timing rules` : null,
+      scanSame.length ? `${scanSame.length} already set` : null,
       scanMissed.length ? `${scanMissed.length} not read` : null,
     ].filter(Boolean).join(' · ');
 
@@ -607,7 +628,7 @@
       // card stays the CURRENT time — a proposal may annotate it, never replace it.
       scanProposal: scan.length
         ? scan.reduce((acc, r) => {
-          if (r.kind === 'mut') return acc;
+          if (r.kind === 'mut' || r.kind === 'unlabelled') return acc;
           acc[r.key] = { azaan: r.azaan, iqama: r.iqama, fault: r.kind === 'bad' ? r.note : null };
           return acc;
         }, {})
@@ -961,6 +982,7 @@
     { group: 'scan', name: 'Read · which column is it?', state: { scanProposal: 'full', guideSeen: true } },
     { group: 'scan', name: 'Read · Jamaat column', state: { scanProposal: 'full', scanColumnMeaning: 'jamaat', guideSeen: true } },
     { group: 'scan', name: 'Read · Azaan column', state: { scanProposal: 'full', scanColumnMeaning: 'azaan', guideSeen: true } },
+    { group: 'scan', name: 'Five read · rules need attention', state: { scenario: 'allAtStart', scanProposal: 'fivePrayer', scanColumnMeaning: 'jamaat', guideSeen: true } },
     // An LED misread is an ordinary outcome, not an edge case: named on the pill, never landed.
     { group: 'scan', name: 'Misread and glare-lost', state: { scanProposal: 'partial', scanColumnMeaning: 'jamaat', guideSeen: true } },
     { group: 'scan', name: 'Landed · publish when ready', state: { draft: SCAN.landed, guideSeen: true } },

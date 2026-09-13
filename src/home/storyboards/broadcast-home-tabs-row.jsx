@@ -1,6 +1,6 @@
 // Tabs & Variations row — static storyboard row (7 variations/tabs)
 // Rendered on the Home Screen board via:
-//   <x-import component="TabsRow" from="./storyboards/tabs-row.jsx" active="{{ activeFrameIndex }}">
+//   <x-import component="HomeRow" from="./storyboards/broadcast-home-tabs-row.jsx" active="{{ activeFrameIndex }}">
 // `active` = index 0-6 of the active snapshot (to highlight it on the canvas).
 
 const STORYBOARD_FRAMES = [
@@ -191,6 +191,39 @@ const MANAGED_ENTRY_FRAMES = [
 // name, photo and summary wait on the network — and the card is already its final size while
 // they do, so nothing below it moves when they land.
 // Appended at global indices 45-50 so every existing frame index and hash deep-link stays stable.
+// The invitee's half of the committee flow: the invitation reaches Home and Profile before the
+// inbox is ever opened. Global indices 51 and 52 (see syncLiveStateToFrame in the board).
+const INVITED_FRAMES = [
+  {
+    id: 'home-invited',
+    name: 'Home — Committee Invitation',
+    tab: 0,
+    component: 'HomeScreen',
+    props: {
+      heroSel: null,
+      inviteNudge: { masjid: 'Masjid E Bilal', role: 'Secretary', inviter: 'Syed Usama', daysLeft: 6, count: 1 },
+      onViewInvitation: () => {}
+    }
+  },
+  {
+    id: 'profile-invited',
+    name: 'Profile — Pending Invitation',
+    tab: 4,
+    component: 'ProfileScreen',
+    props: {
+      pendingInvitations: 1,
+      onViewInvitations: () => {},
+      onMyMasjids: () => {},
+      onRegister: () => {},
+      onInvite: () => {},
+      onApprove: () => {},
+      onTerms: () => {},
+      onPrivacy: () => {},
+      onAbout: () => {}
+    }
+  }
+];
+
 const COLD_START_FRAMES = [
   {
     id: 'home-console-loading',
@@ -388,6 +421,7 @@ function HomeRow({ active = 0, onSelectFrame }) {
         {renderFrame(MANAGED_ENTRY_FRAMES[0], 41, active, onSelectFrame)}
         {renderFrame(MANAGED_ENTRY_FRAMES[4], 43, active, onSelectFrame)}
         {renderFrame(MANAGED_ENTRY_FRAMES[5], 44, active, onSelectFrame)}
+        {renderFrame(INVITED_FRAMES[0], 51, active, onSelectFrame)}
         {HOME_DATA_FRAMES.map((f, i) => renderFrame(f, 37 + i, active, onSelectFrame))}
       </div>
     </div>
@@ -457,12 +491,13 @@ function ProfileRow({ active = 0, onSelectFrame }) {
   return (
     <div>
       <div className="poc-row-label">
-        <span className="mi" data-i="person"></span> 06 · Profile Tab — User Settings · 3 states
+        <span className="mi" data-i="person"></span> 06 · Profile Tab — User Settings · 4 states
       </div>
       <div className="poc-board">
         {STORYBOARD_FRAMES.slice(7, 8).map((f, i) => renderFrame(f, 7 + i, active, onSelectFrame))}
         {renderFrame(PROFILE_EXTRA_FRAMES[0], 38, active, onSelectFrame)}
         {renderFrame(PROFILE_EXTRA_FRAMES[1], 40, active, onSelectFrame)}
+        {renderFrame(INVITED_FRAMES[1], 52, active, onSelectFrame)}
       </div>
     </div>
   );

@@ -1762,19 +1762,66 @@ function InvitationCard({ invitation, actioning, accepted, onAccept, onDecline, 
   );
 }
 
+// Saving the details is THREE requests in a fixed order — save the name and gender, follow the
+// masjid so it becomes the member's primary, then accept the invitation — so the capsule names
+// the one that is running, exactly as onboarding's Complete Setup does.
+const INVITE_SAVE_STEPS = {
+  details: 'Saving your details · 1 of 3',
+  following: 'Following the masjid · 2 of 3',
+  accepting: 'Accepting the invitation · 3 of 3',
+};
+
+// A member who has never given a name accepts a committee role: the onboarding Personal Details
+// screen is reused as a step OVER the inbox — same form, same validation, same capsule — with only
+// the intro and the action renamed, because the promise here is a committee seat, not a follow.
+function InvitationDetailsStep({ invitation, details, handlers }) {
+  const { PersonalDetailsScreen } = window;
+  if (!PersonalDetailsScreen) return null;
+  const saving = details.saving || null;
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 40, animation: 'ops-step var(--motion-emphasized) var(--ease-out)' }}>
+      <PersonalDetailsScreen
+        intro={`Tell us how to address you before we add you to ${invitation ? invitation.name : 'the masjid'}'s committee.`}
+        actionText="Save and accept"
+        name={details.name || ''}
+        onNameTap={handlers.onDetailsName}
+        gender={details.gender || null}
+        onSelectGender={handlers.onDetailsGender}
+        onCompleteSetup={handlers.onDetailsSubmit}
+        onBack={handlers.onDetailsBack}
+        onRetry={handlers.onDetailsRetry}
+        onDismissError={handlers.onDetailsDismiss}
+        nameError={!!details.nameError}
+        genderError={!!details.genderError}
+        loading={!!saving && saving !== 'error'}
+        submitStatus={INVITE_SAVE_STEPS[saving] || INVITE_SAVE_STEPS.details}
+        serviceError={saving === 'error'}
+        shakeKey={details.shakeKey || 0}
+      />
+    </div>
+  );
+}
+
 function InvitationsScreen({ data = {} }) {
   const {
     invitations = {}, onBack, onAccept, onDecline, onRetry, snack, onCloseSnack, onExplore,
     onOpenAcceptedConsole,
   } = data;
-  const { status = 'loaded', items = [], actioning, acceptedId } = invitations;
+  const {
+    status = 'loaded', items = [], actioning, acceptedId, details = null, handoffId = null,
+  } = invitations;
   const live = items.filter((i) => !i.expired);
+  const detailsInvitation = details ? items.find((i) => i.id === details.id) : null;
 
   return (
     <Screen>
       <OpsAppBar title="Invitations" subtitle="Committee roles you have been invited to" onBack={onBack} />
 
       {status === 'loading' ? <Loading label="Loading invitations…" /> : null}
+      {/* The last live invitation was accepted: the inbox has nothing left to show, so it hands
+          over to that masjid's console and SAYS so — a list that empties under the reader's
+          finger and then changes screen reads as a glitch, not a result. */}
+      {status === 'loaded' && handoffId ? <Loading label="Taking you to the console…" /> : null}
       {status === 'error' ? (
         <ErrorState title="Couldn't load invitations" copy="Check your connection and try again." onRetry={onRetry} />
       ) : null}
@@ -1788,7 +1835,7 @@ function InvitationsScreen({ data = {} }) {
           onAction={onExplore}
         />
       ) : null}
-      {status === 'loaded' && items.length ? (
+      {status === 'loaded' && items.length && !handoffId ? (
         <Body bottomInset={40} style={{ gap: 12, paddingTop: BCS_APPBAR_H + 14 }}>
           <div className="eyebrow">
             {live.length
@@ -1812,6 +1859,8 @@ function InvitationsScreen({ data = {} }) {
           </div>
         </Body>
       ) : null}
+
+      {details ? <InvitationDetailsStep invitation={detailsInvitation} details={details} handlers={data} /> : null}
 
       <ConfirmDialog confirm={data.confirm} onCancel={data.onCancelConfirm} />
       <Snack snack={snack} onClose={onCloseSnack} />

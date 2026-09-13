@@ -71,11 +71,12 @@
       { name: 'Organisms', file: 'components/organisms/Organisms.dc.html', icon: 'dashboard', meta: 'Page 06 · dialog, sheet, nudge, bars, picker' }
     ]},
     { id: 'onboarding', num: '02', title: 'Onboarding', items: [
+      { name: 'Splash', file: 'onboarding/Splash.dc.html#current', icon: 'auto_awesome', meta: 'Board · logo reveal · current + 15 variations' },
       { name: 'Sign in', file: 'onboarding/Onboarding.dc.html#intro', icon: 'login', meta: 'Board · intro → phone → OTP' },
       { name: 'Complete Profile', file: 'personal-details/Personal Details.dc.html#details', icon: 'person', meta: 'Board · details → welcome · 6 states' }
     ]},
     { id: 'core', num: '03', title: 'Core app', items: [
-      { name: 'Home Screen', file: 'home/Home Screen.dc.html', icon: 'splitscreen', meta: 'Section board · 5 tabs + prayer/audio variations' },
+      { name: 'Home Broadcast Studio', file: 'home/Home Broadcast Studio.dc.html', icon: 'splitscreen', meta: 'Section board · Home, Qaum, Quran, Salaah, Profile + console entry' },
       { name: 'Explore Masjids', file: 'masjid-explore/Explore Masjids.dc.html#map', icon: 'travel_explore', meta: 'Section board · map · list · pincode · QR · 10 states' },
       { name: 'Sign-in & Nudge States', file: 'nudge-states/Sign-in & Nudge States.dc.html', icon: 'notifications', meta: 'Board · guest · no-masjid · notifications · 17 states' },
       { name: 'Quran', file: 'Quran.dc.html#home', icon: 'auto_stories', meta: 'Section board · Home → index → reader · 9 states' }
@@ -83,7 +84,8 @@
     { id: 'masjid', num: '04', title: 'Masjid', items: [
       { name: 'Masjid Onboarding', file: 'masjid-register/Masjid Onboarding.dc.html#entry', icon: 'add_home_work', meta: 'Section board · My Masjids sheet · screen-by-screen storyboard · 41 states' },
       { name: 'Masjid Console', file: 'masjid-operations/Masjid Console.dc.html', icon: 'campaign', meta: 'Section board · the masjid console · hub → committee · musalleen · details · invitations · send a paigham · 74 states' },
-      { name: 'Salaah Timing Rules', file: 'masjid-operations/Salaah Timing Rules.dc.html', icon: 'schedule', meta: 'Section board · the whole Salaah section · the day dragged by rule · board scan · per-prayer rule · publish · 33 states' }
+      { name: 'Salaah Timing Rules', file: 'masjid-operations/Salaah Timing Rules.dc.html', icon: 'schedule', meta: 'Section board · the whole Salaah section · the day dragged by rule · board scan · per-prayer rule · publish · 33 states' },
+      { name: 'Admin Console', file: 'admin/Admin Console.dc.html', icon: 'dashboard', meta: 'Section board · platform admin · hub with signups · approvals queue · request and claim review · paigham moderation · 33 states' }
     ]},
     { id: 'content', num: '05', title: 'Content & tools', items: [
       { name: 'Find Sehri', file: 'sehri/Sehri.dc.html#map', icon: 'restaurant', meta: 'Section board · Home → permission → map · list · 5 states' },
@@ -127,12 +129,16 @@
      Boards push their descriptive title via window.NoorSetChromeTitle
      (called from BoardHeader). Plain screens fall back to their site-map
      name; the cover falls back to 'Noor'. */
+  function pathMatchesItem(curPath, itemFile) {
+    var fileNoHash = itemFile.split('#')[0];
+    var matchPath = fileNoHash.charAt(0) === '/' ? fileNoHash : '/' + fileNoHash;
+    return curPath.indexOf(matchPath) !== -1;
+  }
   function navItemFor(curPath) {
     for (var i = 0; i < NAV.length; i++) {
       var items = NAV[i].items;
       for (var j = 0; j < items.length; j++) {
-        var f = items[j].file.split('#')[0];
-        if (curPath.indexOf('/' + f) !== -1) return items[j];
+        if (pathMatchesItem(curPath, items[j].file)) return items[j];
       }
     }
     return null;
@@ -151,9 +157,19 @@
   window.NoorSetChromeSubtitle = setChromeSubtitle;
 
   /* ---------- left nav drawer ---------- */
-  function openDrawer() { document.documentElement.classList.add('noor-nav-open'); }
-  function closeDrawer() { document.documentElement.classList.remove('noor-nav-open'); }
-  function toggleDrawer() { document.documentElement.classList.toggle('noor-nav-open'); }
+  function revealCurrentDrawerItem() {
+    var current = document.querySelector('#noor-nav .nn-item.current');
+    if (current) current.scrollIntoView({ block: 'center', inline: 'nearest' });
+  }
+  function setDrawerOpen(isOpen) {
+    document.documentElement.classList.toggle('noor-nav-open', isOpen);
+    var toggle = document.getElementById('noor-nav-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (isOpen) requestAnimationFrame(revealCurrentDrawerItem);
+  }
+  function openDrawer() { setDrawerOpen(true); }
+  function closeDrawer() { setDrawerOpen(false); }
+  function toggleDrawer() { setDrawerOpen(!document.documentElement.classList.contains('noor-nav-open')); }
 
   function buildDrawer(prefix) {
     if (document.getElementById('noor-nav')) return;
@@ -178,8 +194,10 @@
         var a = document.createElement('a');
         a.className = 'nn-item';
         a.href = prefix + p.file;
-        var fileNoHash = p.file.split('#')[0];
-        if (curPath.indexOf('/' + fileNoHash) !== -1) a.classList.add('current');
+        if (pathMatchesItem(curPath, p.file)) {
+          a.classList.add('current');
+          a.setAttribute('aria-current', 'page');
+        }
         var ic = document.createElement('span');
         ic.className = 'nn-ic';
         // Local icon kit (_theme/icons.css renders the SVG through a CSS mask). The old
@@ -253,7 +271,7 @@
       'transform:translateX(calc(-100% - 22px));opacity:0;',
       'transition:transform .36s cubic-bezier(.2,.9,.25,1),opacity .28s ease;display:flex;flex-direction:column;font-family:var(--font-body,"Plus Jakarta Sans",sans-serif)}',
       'html.noor-nav-open #noor-nav{transform:translateX(0);opacity:1}',
-      '#noor-nav .nn-list{flex:1;overflow-y:auto;padding:6px 10px 22px;overscroll-behavior:contain}',
+      '#noor-nav .nn-list{flex:1;min-height:0;overflow-y:auto;padding:6px 10px 22px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable}',
       '#noor-nav .nn-sec{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--color-info-secondary,#71717B);padding:16px 12px 6px}',
       '#noor-nav .nn-item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:12px;text-decoration:none;color:var(--color-info-primary,#09090B)}',
       '#noor-nav .nn-item:hover{background:var(--color-surface-secondary,#F0FDF4)}',
@@ -312,9 +330,12 @@
     /* sidebar toggle — opens the nav pane */
     var toggle = document.createElement('button');
     toggle.className = 'noor-chrome-toggle';
+    toggle.id = 'noor-nav-toggle';
     toggle.type = 'button';
     toggle.title = 'Navigation';
     toggle.setAttribute('aria-label', 'Toggle navigation');
+    toggle.setAttribute('aria-controls', 'noor-nav');
+    toggle.setAttribute('aria-expanded', 'false');
     toggle.innerHTML = SIDEBAR_SVG;
     toggle.addEventListener('click', toggleDrawer);
     left.appendChild(toggle);

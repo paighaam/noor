@@ -325,25 +325,88 @@ function ReviewRow({ label, value, onEdit, border }) {
 }
 
 function LocationMap({ d }) {
+  const phase = d.locationPhase || (d.pinDropped ? 'confirmed' : 'choice');
+  const locating = phase === 'loading';
+  const showGuidance = ['choice', 'loading', 'denied', 'unavailable'].includes(phase);
+  const guidance = {
+    choice: {
+      icon: 'near_me',
+      title: 'Start near the masjid entrance',
+      body: 'Use your current location, then move the map to the exact entrance.',
+    },
+    loading: {
+      icon: 'progress_activity',
+      title: 'Finding your location',
+      body: 'This can take a moment. Keep this screen open while we position the map.',
+    },
+    denied: {
+      icon: 'location_off',
+      title: 'Location access is off',
+      body: 'Allow location in Settings, or start near the pincode and place the entrance manually.',
+    },
+    unavailable: {
+      icon: 'location_searching',
+      title: 'We could not find your location',
+      body: 'Try again, or start near the pincode and move the map to the entrance.',
+    },
+  }[phase];
+
+  const status = phase === 'confirmed'
+    ? { icon: 'check_circle', text: 'Entrance pin confirmed · pan again to refine it' }
+    : phase === 'positioned'
+      ? { icon: 'my_location', text: 'Near your current location · pan to the exact entrance' }
+      : { icon: 'location_on', text: 'Map starts near the pincode · pan to the exact entrance' };
+
   return (
-    <div className={`wizard-map ${d.locationExpanded ? 'expanded' : ''}`}>
+    <div className={`wizard-map phase-${phase}`}>
       <div className="wizard-map-grid"></div>
       <div className="wizard-map-road"></div>
-      <div className="wizard-map-pin">
-        <span className="mi fill" style={{ fontVariationSettings: "'FILL' 1" }} data-i="location_on"></span>
-      </div>
-      <div className="wizard-map-actions">
-        <button className="ib ib-tonal md" onClick={d.onRecenterLocation} aria-label="Use my current location">
-          <span className="mi" data-i="my_location"></span>
-        </button>
-        <button className="ib ib-tonal md" onClick={d.onToggleLocationExpanded} aria-label={d.locationExpanded ? 'Collapse map' : 'Expand map'}>
-          <span className="mi" data-i={d.locationExpanded ? 'contract' : 'unfold_more'}></span>
-        </button>
-      </div>
-      <button className="wizard-map-status" onClick={d.onTogglePin}>
-        <span className="mi" style={{ fontSize: 18, color: 'var(--color-action-primary)' }} data-i={d.pinDropped ? 'check_circle' : 'location_on'}></span>
-        <span>{d.pinDropped ? 'Entrance pinned · tap the map to adjust' : 'Tap the map to pin the masjid entrance'}</span>
-      </button>
+      {!showGuidance ? (
+        <>
+          <button className="wizard-map-hit-area" onClick={d.onTogglePin} aria-label="Place entrance pin"></button>
+          <div className="wizard-map-pin">
+            <span className="mi fill" style={{ fontVariationSettings: "'FILL' 1" }} data-i="location_on"></span>
+          </div>
+          <div className="wizard-map-actions">
+            <button className="ib ib-tonal md" onClick={d.onRecenterLocation} aria-label="Use my current location">
+              <span className="mi" data-i="my_location"></span>
+            </button>
+          </div>
+          <button className="wizard-map-status" onClick={d.onTogglePin}>
+            <span className="mi" style={{ fontSize: 18, color: 'var(--color-action-primary)' }} data-i={status.icon}></span>
+            <span>{status.text}</span>
+          </button>
+        </>
+      ) : (
+        <div className="wizard-map-guidance">
+          <div className={`wizard-map-guidance-icon ${locating ? 'loading' : ''}`}>
+            <span className="mi" data-i={guidance.icon}></span>
+          </div>
+          <div className="wizard-map-guidance-title">{guidance.title}</div>
+          <div className="wizard-map-guidance-body">{guidance.body}</div>
+          {phase === 'choice' ? (
+            <div className="wizard-map-guidance-actions">
+              <button className="btn btn-filled" onClick={d.onRecenterLocation}>
+                <span className="mi" data-i="my_location"></span>
+                Use my location
+              </button>
+              <button className="btn btn-tonal" onClick={d.onChooseLocationManually}>Choose manually</button>
+            </div>
+          ) : null}
+          {phase === 'denied' ? (
+            <div className="wizard-map-guidance-actions">
+              <button className="btn btn-filled" onClick={d.onOpenLocationSettings}>Open settings</button>
+              <button className="btn btn-tonal" onClick={d.onChooseLocationManually}>Choose manually</button>
+            </div>
+          ) : null}
+          {phase === 'unavailable' ? (
+            <div className="wizard-map-guidance-actions">
+              <button className="btn btn-filled" onClick={d.onRecenterLocation}>Try again</button>
+              <button className="btn btn-tonal" onClick={d.onChooseLocationManually}>Choose manually</button>
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
@@ -698,7 +761,7 @@ function WizardBody({ d }) {
     return (
       <div>
         <div style={{ ...WIZARD_TITLE, fontSize: 26, marginBottom: 10 }}>Which maslak does the masjid follow?</div>
-        <div style={{ ...WIZARD_SUB, marginBottom: 22 }}>This helps members find the right community.</div>
+        <div style={{ ...WIZARD_SUB, marginBottom: 22 }}>We use this to calculate accurate salaah timings for this masjid.</div>
         <Field label="Maslak" error={d.errors && d.errors.maslak} mb={0}><PickerField value={d.maslak} placeholder="Select maslak" onOpen={d.onOpenMaslakSheet} error={d.errors && d.errors.maslak} /></Field>
       </div>
     );

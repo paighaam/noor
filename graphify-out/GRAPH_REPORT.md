@@ -1,16 +1,16 @@
-# Graph Report - noor  (2026-08-25)
+# Graph Report - noor  (2026-09-12)
 
 ## Corpus Check
-- 126 files · ~689,140 words
+- 139 files · ~3,253,072 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1455 nodes · 2002 edges · 137 communities (79 shown, 58 thin omitted)
-- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 204 edges (avg confidence: 0.51)
+- 1588 nodes · 2209 edges · 147 communities (85 shown, 62 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 203 edges (avg confidence: 0.51)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `57835dce`
+- Built from commit: `2e6be2ad`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -103,7 +103,6 @@
 - next.config.mjs
 - tailwind.config.ts
 - ScanBoardStage
-- VARIATION_OPTIONS
 - compose-post.jsx
 - check_classes.py
 - @dnd-kit/core
@@ -136,7 +135,6 @@
 - @radix-ui/react-slot
 - @radix-ui/react-tabs
 - @radix-ui/react-tooltip
-- react-dom
 - tailwind-merge
 - canonicalCommitteePhone
 - Agent behavior
@@ -148,35 +146,44 @@
 - noor.md
 - self-improve.md
 - .claude/CLAUDE.md
+- GateTests
+- task-template.json
+- scan-secrets-and-pii.mjs
+- Paigham delivery contract — protocol 1
+- Paigham delivery evidence — protocol 1
+- delivery-profiles.md
+- paigham-delivery/SKILL.md
+- paigham-review/SKILL.md
+- screenshot-editor.tsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `tokenKinds` - 187 edges
-2. `react` - 66 edges
-3. `Salaah timing rules — final product and interaction specification` - 22 edges
-4. `Noor UI/UX Upgrade Decisions` - 17 edges
-5. `compilerOptions` - 16 edges
-6. `ScreenshotEditor()` - 15 edges
-7. `cn()` - 14 edges
-8. `Agent behavior` - 13 edges
+2. `react` - 69 edges
+3. `GateTests` - 42 edges
+4. `Salaah timing rules — final product and interaction specification` - 22 edges
+5. `Noor UI/UX Upgrade Decisions` - 17 edges
+6. `compilerOptions` - 16 edges
+7. `ScreenshotEditor()` - 15 edges
+8. `cn()` - 14 edges
 9. `HomeScreen()` - 13 edges
-10. `Agent Behavior` - 13 edges
+10. `Agent behavior` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `HomeScreen()` --references--> `react`  [EXTRACTED]
-  src/home/storyboards/broadcast-home-screens.jsx → app-store-screenshots/package.json
-- `QaumScreen()` --references--> `react`  [EXTRACTED]
-  src/home/storyboards/broadcast-home-screens.jsx → app-store-screenshots/package.json
-- `SalaahScreen()` --references--> `react`  [EXTRACTED]
-  src/home/storyboards/broadcast-home-screens.jsx → app-store-screenshots/package.json
 - `QaumScreen()` --references--> `react`  [EXTRACTED]
   src/home/storyboards/screens.jsx → app-store-screenshots/package.json
 - `SalaahScreen()` --references--> `react`  [EXTRACTED]
   src/home/storyboards/screens.jsx → app-store-screenshots/package.json
+- `SrlSelect()` --references--> `react`  [EXTRACTED]
+  src/masjid-operations/storyboards/salaah-rules-screens.jsx → app-store-screenshots/package.json
+- `OptionSheet()` --references--> `react`  [EXTRACTED]
+  src/_theme/components.jsx → app-store-screenshots/package.json
+- `ZakaatStepScreen()` --references--> `react`  [EXTRACTED]
+  src/zakaat/storyboards/screens.jsx → app-store-screenshots/package.json
 
 ## Import Cycles
 - None detected.
 
-## Communities (137 total, 58 thin omitted)
+## Communities (147 total, 62 thin omitted)
 
 ### Community 0 - "tokenKinds"
 Cohesion: 0.01
@@ -187,8 +194,8 @@ Cohesion: 0.08
 Nodes (42): boot(), collectProps(), compileAttr(), compileTemplate(), createComponentFactory(), createExternalModules(), createHelmetManager(), createPseudoSheet() (+34 more)
 
 ### Community 2 - "react"
-Cohesion: 0.15
-Nodes (41): react, react, Badge(), BodyM(), BodyS(), BodyXS(), Checkbox(), ExploreScreen() (+33 more)
+Cohesion: 0.08
+Nodes (48): react, react, Badge(), BodyM(), BodyS(), BodyXS(), Checkbox(), ExploreScreen() (+40 more)
 
 ### Community 3 - "Visual foundations"
 Cohesion: 0.09
@@ -203,8 +210,8 @@ Cohesion: 0.18
 Nodes (10): overrides, plugins, rules, no-restricted-imports, no-restricted-syntax, react/forbid-elements, x-omelette, components (+2 more)
 
 ### Community 6 - "chrome.js"
-Cohesion: 0.15
-Nodes (18): ENTRY_FRAMES, EntryRow(), frame(), NAV, apply(), buildChrome(), buildDrawer(), closeDrawer() (+10 more)
+Cohesion: 0.14
+Nodes (22): ENTRY_FRAMES, EntryRow(), frame(), NAV, apply(), buildChrome(), buildDrawer(), closeDrawer() (+14 more)
 
 ### Community 7 - "useNoorDark"
 Cohesion: 0.42
@@ -220,15 +227,15 @@ Nodes (19): Agent Behavior, Commit Messages, Design System Rules, graphify, Laye
 
 ### Community 16 - "toolbar.tsx"
 Cohesion: 0.08
-Nodes (28): Props, SaveStatus(), Card, CardContent, CardHeader, CardTitle, DialogContent, DialogDescription (+20 more)
+Nodes (29): Props, SaveStatus(), Card, CardContent, CardHeader, CardTitle, DialogContent, DialogDescription (+21 more)
 
 ### Community 17 - "Section board — annotated skeletons"
 Cohesion: 0.29
 Nodes (6): 1. The board page — `<section>/<Section>.dc.html`, 2. A storyboard row — `<section>/storyboards/<flow>-row.jsx`, 3. Shared screen components — `<section>/storyboards/screens.jsx`, Index registration, Pre-loading cross-section components, Section board — annotated skeletons
 
 ### Community 20 - "types.ts"
-Cohesion: 0.16
-Nodes (20): PreviewStage(), Props, Props, Sidebar(), DeckCanvas(), getCanvas(), SlideCanvas(), Props (+12 more)
+Cohesion: 0.18
+Nodes (19): PreviewStage(), Props, Props, DeckCanvas(), getCanvas(), SlideCanvas(), Props, SlideThumb() (+11 more)
 
 ### Community 22 - "Agent Behavior"
 Cohesion: 0.10
@@ -247,8 +254,8 @@ Cohesion: 0.29
 Nodes (6): 1. The board page — `<section>/<Section>.dc.html`, 2. A storyboard row — `<section>/storyboards/<flow>-row.jsx`, 3. Shared screen components — `<section>/storyboards/screens.jsx`, Index registration, Pre-loading cross-section components, Section board — annotated skeletons
 
 ### Community 26 - "slide-canvas.tsx"
-Cohesion: 0.08
-Nodes (36): AndroidPhone(), AndroidTabletL(), AndroidTabletP(), FrameProps, IPad(), Phone(), backgroundFor(), clampRect() (+28 more)
+Cohesion: 0.09
+Nodes (27): Inspector(), TextElementPanel(), backgroundFor(), Caption(), clampRect(), DeckCanvasProps, DeckEditHandlers, defaultElementZ() (+19 more)
 
 ### Community 27 - "eval-0-dua-dikhr-section/eval_metadata.json"
 Cohesion: 0.40
@@ -264,15 +271,11 @@ Nodes (26): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModu
 
 ### Community 32 - "screenshot-editor.tsx"
 Cohesion: 0.05
-Nodes (12): CONSOLE_DESTINATIONS, OPS_CAPABILITIES, OPS_FOLLOWERS, OPS_INVITATIONS, OPS_MANAGED, OPS_MASJID, OPS_MEMBERS, OPS_POSTS (+4 more)
+Nodes (13): CONSOLE_DESTINATIONS, INVITE_SAVE_STEPS, OPS_CAPABILITIES, OPS_FOLLOWERS, OPS_INVITATIONS, OPS_MANAGED, OPS_MASJID, OPS_MEMBERS (+5 more)
 
 ### Community 33 - "home/storyboards/screens.jsx"
 Cohesion: 0.12
 Nodes (6): QAUM_AMP, QaumAudioPlayer(), qaumBars(), QaumScreen(), qaumTime(), SalaahScreen()
-
-### Community 34 - "tabs-row.jsx"
-Cohesion: 0.13
-Nodes (18): HOME_DATA_FRAMES, HomePrayerRow(), HomeRow(), MANAGED_ENTRY_FRAMES, PRAYER_FRAMES, PROFILE_EXTRA_FRAMES, ProfileRow(), QAUM_DATA_FRAMES (+10 more)
 
 ### Community 39 - "dua-dikhr/storyboards/screens.jsx"
 Cohesion: 0.15
@@ -283,8 +286,8 @@ Cohesion: 0.24
 Nodes (6): DetailOverlay(), GridScreen(), NAMES, SCHEMES, schemeStyle(), screenStyle
 
 ### Community 43 - "masjid-explore/storyboards/screens.jsx"
-Cohesion: 0.16
-Nodes (5): ExploreListScreen(), ExploreMapScreen(), masjidCardTransitionName(), MASJIDS, PIN_KEYS
+Cohesion: 0.15
+Nodes (6): ExploreListScreen(), ExploreMapScreen(), masjidCardTransitionName(), MASJIDS, pagerIndicatorWindow(), PIN_KEYS
 
 ### Community 45 - "zakaat/storyboards/screens.jsx"
 Cohesion: 0.33
@@ -319,8 +322,8 @@ Cohesion: 0.67
 Nodes (3): frame(), OUTCOME_FRAMES, OutcomeRow()
 
 ### Community 64 - "build.mjs"
-Cohesion: 0.13
-Nodes (11): dirCount, DIST, IMAGES, pages, patchChrome(), resolveWeb(), rewrite(), ROOT (+3 more)
+Cohesion: 0.12
+Nodes (12): dirCount, DIST, fixedRoutes, IMAGES, pages, patchChrome(), resolveWeb(), rewrite() (+4 more)
 
 ### Community 65 - "package.json"
 Cohesion: 0.18
@@ -331,8 +334,8 @@ Cohesion: 0.29
 Nodes (6): hosting, headers, ignore, public, site, trailingSlash
 
 ### Community 69 - "masjid-operations/storyboards/screens.jsx"
-Cohesion: 0.13
-Nodes (20): COLD_START_FRAMES, HOME_DATA_FRAMES, HomeColdStartRow(), HomePrayerRow(), HomeRow(), MANAGED_ENTRY_FRAMES, PRAYER_FRAMES, PROFILE_EXTRA_FRAMES (+12 more)
+Cohesion: 0.12
+Nodes (21): COLD_START_FRAMES, HOME_DATA_FRAMES, HomeColdStartRow(), HomePrayerRow(), HomeRow(), INVITED_FRAMES, MANAGED_ENTRY_FRAMES, PRAYER_FRAMES (+13 more)
 
 ### Community 70 - "Noor UI/UX Upgrade Decisions"
 Cohesion: 0.09
@@ -347,12 +350,12 @@ Cohesion: 0.21
 Nodes (9): ACCEPTED, Props, ScreenshotPicker(), cache, didFail(), failed, fetchAsDataUrl(), preloadImages() (+1 more)
 
 ### Community 73 - "describeConfig"
-Cohesion: 0.12
-Nodes (7): HomeScreen(), QAUM_AMP, QaumAudioPlayer(), qaumBars(), QaumScreen(), qaumTime(), SalaahScreen()
+Cohesion: 0.17
+Nodes (12): clamp01(), EASE, GLOW_FLOOD_FAMILY, glowFlood(), lerp(), phase(), SPLASH_FONTS, SPLASH_VARIANTS (+4 more)
 
 ### Community 74 - "defaults.ts"
-Cohesion: 0.61
-Nodes (7): en(), fgStarter(), ipadStarter(), makeStarterSlides(), newSlide(), nid(), tabletStarter()
+Cohesion: 0.42
+Nodes (9): DEFAULT_PROJECT, en(), fgStarter(), ipadStarter(), makeStarterSlides(), newSlide(), nid(), tabletStarter() (+1 more)
 
 ### Community 75 - "board-rows.jsx"
 Cohesion: 0.25
@@ -363,16 +366,16 @@ Cohesion: 0.27
 Nodes (10): availableCommitteeRoles(), BroadcastStudioHeader(), CommitteeBody(), DetailsBody(), InvitationCard(), isRepeatableCommitteeRole(), MemberBody(), MemberRow() (+2 more)
 
 ### Community 77 - "inspector.tsx"
-Cohesion: 0.15
-Nodes (22): ActiveElementPanel(), defaultZ(), ELEMENT_LABEL, elementLabel(), ElementTransformControls(), Inspector(), Props, TextElementPanel() (+14 more)
+Cohesion: 0.14
+Nodes (20): ActiveElementPanel(), defaultZ(), ELEMENT_LABEL, elementLabel(), ElementTransformControls(), Props, ScreenshotEditor(), Sidebar() (+12 more)
 
 ### Community 78 - "components.json"
 Cohesion: 0.11
 Nodes (17): aliases, components, hooks, lib, ui, utils, iconLibrary, rsc (+9 more)
 
 ### Community 79 - "storage.ts"
-Cohesion: 0.23
-Nodes (15): DEFAULT_PROJECT, coerceLocalized(), applyUpdater(), cleanTextElement(), cleanTransform(), loadFromFile(), loadFromLocalStorage(), mergeWithDefaults() (+7 more)
+Cohesion: 0.24
+Nodes (14): coerceLocalized(), applyUpdater(), cleanTextElement(), cleanTransform(), loadFromFile(), loadFromLocalStorage(), mergeWithDefaults(), migrateSlide() (+6 more)
 
 ### Community 80 - "App Store Screenshots — Editor Template"
 Cohesion: 0.25
@@ -393,10 +396,6 @@ Nodes (3): filePath(), GET(), POST()
 ### Community 84 - "layout.tsx"
 Cohesion: 0.40
 Nodes (3): bodyFont, displayFont, metadata
-
-### Community 89 - "VARIATION_OPTIONS"
-Cohesion: 0.13
-Nodes (15): ScreenshotEditor(), Toolbar(), CANVAS, EXPORT_SIZES, EXPORT_SIZES_LANDSCAPE, ExportSize, getExportSizes(), hasTheme() (+7 more)
 
 ### Community 91 - "check_classes.py"
 Cohesion: 0.57
@@ -478,25 +477,45 @@ Nodes (13): Agent behavior, Rule 10 — Checkpoint after every significant step,
 Cohesion: 0.22
 Nodes (8): Canonical Product Flows — Read Before Journey Design, Commit Messages, Design System Rules, Layer Architecture — HARD RULES (do not violate), Noor architecture, Project Structure, Run Commands, Skill routing
 
+### Community 138 - "task-template.json"
+Cohesion: 0.12
+Nodes (32): acceptance, allowed_paths, blockers, checks, dependencies, id, issue, non_goals (+24 more)
+
+### Community 139 - "scan-secrets-and-pii.mjs"
+Cohesion: 0.16
+Nodes (12): RFC-2606, RFC-6761, argv, EXCLUDED_PATHS, isReserved(), MUST_FLAG, MUST_NOT_FLAG, redact() (+4 more)
+
+### Community 140 - "Paigham delivery contract — protocol 1"
+Cohesion: 0.33
+Nodes (5): Completion and coordination, Implementation and evidence, Independent review and correction, Paigham delivery contract — protocol 1, Ready before dispatch
+
+### Community 141 - "Paigham delivery evidence — protocol 1"
+Cohesion: 0.40
+Nodes (4): Canonical distribution and safety, CI and task binding, Paigham delivery evidence — protocol 1, Run a bounded assignment
+
+### Community 145 - "screenshot-editor.tsx"
+Cohesion: 0.11
+Nodes (25): AndroidPhone(), AndroidTabletL(), AndroidTabletP(), FrameProps, IPad(), Phone(), getFrameForDevice(), CANVAS (+17 more)
+
 ## Knowledge Gaps
-- **656 isolated node(s):** `Rule 1 — Think Before Coding`, `Rule 2 — Simplicity First`, `Rule 3 — Surgical Changes`, `Rule 4 — Goal-Driven Execution`, `Rule 5 — Use the model only for judgment calls` (+651 more)
+- **683 isolated node(s):** `protocol`, `objective`, `owner`, `issue`, `merge` (+678 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **58 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **62 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `react` to `home/storyboards/screens.jsx`, `support.js`, `components.jsx`, `zakaat/storyboards/screens.jsx`, `useNoorDark`, `dependencies`, `@dnd-kit/core`, `describeConfig`, `describeConfig`, `inspector.tsx`, `toolbar.tsx`, `salaah-rules-screens.jsx`, `types.ts`, `VARIATION_OPTIONS`, `slide-canvas.tsx`, `salaah-scroll-timeline.jsx`?**
-  _High betweenness centrality (0.129) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `@dnd-kit/core`, `SalaahConfigBody`, `react`, `@dnd-kit/utilities`, `react-dom`, `jszip`, `next`, `@radix-ui/react-dialog`, `@radix-ui/react-label`, `@radix-ui/react-popover`, `@radix-ui/react-select`, `@radix-ui/react-slot`, `@radix-ui/react-tabs`, `@radix-ui/react-tooltip`, `@dnd-kit/core`, `tailwind-merge`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
-- **Why does `MemberBody()` connect `describeConfig` to `screenshot-editor.tsx`, `react`?**
-  _High betweenness centrality (0.031) - this node is a cross-community bridge._
-- **What connects `Rule 1 — Think Before Coding`, `Rule 2 — Simplicity First`, `Rule 3 — Surgical Changes` to the rest of the system?**
-  _656 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `react` connect `react` to `home/storyboards/screens.jsx`, `support.js`, `components.jsx`, `zakaat/storyboards/screens.jsx`, `useNoorDark`, `dependencies`, `@dnd-kit/core`, `describeConfig`, `describeConfig`, `inspector.tsx`, `toolbar.tsx`, `salaah-rules-screens.jsx`, `types.ts`, `slide-canvas.tsx`, `salaah-scroll-timeline.jsx`?**
+  _High betweenness centrality (0.101) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `dependencies` to `@dnd-kit/core`, `SalaahConfigBody`, `react`, `@dnd-kit/utilities`, `tabs-row.jsx`, `jszip`, `next`, `@radix-ui/react-dialog`, `@radix-ui/react-label`, `@radix-ui/react-popover`, `@radix-ui/react-select`, `@radix-ui/react-slot`, `@radix-ui/react-tabs`, `@radix-ui/react-tooltip`, `@dnd-kit/core`, `tailwind-merge`?**
+  _High betweenness centrality (0.033) - this node is a cross-community bridge._
+- **Why does `tokenKinds` connect `tokenKinds` to `x-omelette`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+- **What connects `protocol`, `objective`, `owner` to the rest of the system?**
+  _683 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `tokenKinds` be split into smaller, more focused modules?**
   _Cohesion score 0.0106951871657754 - nodes in this community are weakly interconnected._
 - **Should `support.js` be split into smaller, more focused modules?**
   _Cohesion score 0.07966457023060797 - nodes in this community are weakly interconnected._
 - **Should `react` be split into smaller, more focused modules?**
-  _Cohesion score 0.14587737843551796 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08461131676361713 - nodes in this community are weakly interconnected._

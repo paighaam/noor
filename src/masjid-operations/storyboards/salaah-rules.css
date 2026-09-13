@@ -196,11 +196,13 @@
 
 /* ── The receipt ──
    One pill per prayer, in day order. Amber never letters: an ok pill keeps the ordinary ink and
-   locates with the action tint; red says the reading cannot exist and may letter; an anchored
-   prayer stays quiet, because nothing about it is wrong. */
+   locates with the action tint; red borders name the rule or window that needs attention. */
 .scan-sheet-pills{display:flex;flex-wrap:wrap;gap:var(--size-md);padding:var(--size-sm) 0 var(--size-md)}
 .scan-sheet-pill{
   display:inline-flex;
+  flex-wrap:wrap;
+  max-width:100%;
+  box-sizing:border-box;
   align-items:center;
   gap:6px;
   padding:7px 12px;
@@ -214,17 +216,24 @@
 .scan-sheet-pill em{font-style:normal;font-weight:800;font-variant-numeric:tabular-nums}
 .scan-sheet-pill>.mi{font-size:14px;color:var(--color-action-primary)}
 .scan-sheet-pill.is-ok{border-color:color-mix(in oklab,var(--color-action-primary) 55%,transparent)}
-.scan-sheet-pill.is-bad{border-color:var(--color-status-error)}
+.scan-sheet-pill.is-bad,
+.scan-sheet-pill.is-anchored{border-color:var(--color-status-error)}
 .scan-sheet-pill.is-bad em{color:var(--color-status-error)}
-.scan-sheet-pill.is-bad small{font-size:9.5px;font-weight:800;letter-spacing:.04em;
-  color:var(--color-status-error);text-transform:uppercase}
-/* Read fine, and still unlandable: the prayer follows its own start. Stated, never coloured — this
-   is not a fault, and spending red on it would say the reading was wrong. */
-.scan-sheet-pill.is-anchored{border-style:dashed}
-.scan-sheet-pill.is-anchored em,
-.scan-sheet-pill.is-anchored small.is-quiet{font-weight:600;color:var(--color-info-secondary)}
-.scan-sheet-pill.is-anchored small.is-quiet{font-size:10.5px}
+.scan-sheet-pill small{font-size:10.5px;font-weight:600;color:var(--color-info-secondary)}
+.scan-sheet-pill.is-bad small,
+.scan-sheet-pill.is-anchored small{color:var(--color-status-error)}
+/* Red marks an action needed; the words distinguish a rule restriction from a window conflict.
+   Keep the successfully extracted clock time in ordinary ink for a rule restriction. */
 .scan-sheet-pill.is-mut{color:var(--color-info-tertiary)}
+.scan-sheet-help{font-family:var(--font-body);font-size:var(--body-s-size);line-height:var(--body-s-lh);
+  color:var(--color-info-secondary);margin-bottom:var(--size-lg)}
+.scan-sheet-help p{margin:0 0 var(--size-md)}
+.scan-sheet-help .btn{padding-inline:0}
+/* Long reasons scroll inside the receipt; the decision remains visible on a narrow phone. */
+.scan-review-sheet .dlg-body{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.scan-review-sheet .dlg-title,
+.scan-review-sheet .dlg-desc,
+.scan-review-sheet .dlg-actions{flex-shrink:0}
 
 /* ── The column question ──
    A single-column board does not say which column it is, and one edit cannot tell an azaan from a
