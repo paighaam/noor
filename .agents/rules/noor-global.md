@@ -7,7 +7,8 @@ description: Current Noor structure, layer rules, design-system contract, and pr
 
 ## Run Commands
 
-Static site — no build step. Serve the repo root and open pages in a browser:
+Static source pages can be served directly for authoring. Publishing requires the clean-URL
+build in `dist/`:
 
 ```bash
 # Dev server with caching disabled (preferred — stock http.server serves stale files)
@@ -15,6 +16,13 @@ python3 src/_theme/devserver.py 8474
 
 # Plain static server (ports 8471–8473 configured in .claude/launch.json)
 python3 -m http.server 8471
+
+# Build and preview the published routes
+npm run build
+python3 tools/serve-dist.py 8475
+
+# Deploy only the Noor Hosting site configured in firebase.json
+npm run deploy
 ```
 
 Entry point: `src/Index.dc.html` (Figma-style cover linking every page).

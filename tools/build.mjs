@@ -59,6 +59,7 @@ for (const rel of pages) {
 const routeMap = {};
 const fixedRoutes = {
   'home/Home Broadcast Studio.dc.html': '/home/home-broadcast-studio/',
+  'onboarding/Onboarding.dc.html': '/onboarding/',
 };
 for (const rel of pages) {
   const dir = rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : '';
