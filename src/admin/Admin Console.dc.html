@@ -184,7 +184,7 @@ class Component extends DCLogic {
       const data = window.buildAdminData(st, {});
       const name = data.lead ? (data.record ? data.record.name : data.lead.masjidName) : 'Masjid';
       return window.adminApplyPatch(st, {
-        working: null, route: 'approvals', stepDir: 'back', leadFilter: 'P', corrections: {},
+        working: null, route: 'approvals', stepDir: 'back', leadFilter: 'PV', corrections: {},
         decided: { ...st.decided, [st.leadId]: { status: 'VERIFIED', decision: { by: 'Toufeeq Ahamed', on: 'Just now', masjidId: isClaim ? 'M560051012' : 'M570019004', corrections: data.correctionCount || undefined } } },
         snack: { tone: 'success', message: isClaim ? `${name} has its committee` : `${name} is live · M570019004` },
       });
@@ -202,7 +202,7 @@ class Component extends DCLogic {
       this.after(1200, () => this.setState((st) => window.adminApplyPatch(st, {
         working: null, route: 'moderation', stepDir: 'back',
         postDecided: { ...st.postDecided, [st.postId]: { status: 'REJECTED', decision: { by: 'Toufeeq Ahamed', on: 'Just now', reason } } },
-        snack: { tone: 'success', message: 'Paigham rejected · the committee was told why' },
+        snack: { tone: 'success', message: 'Paigham rejected' },
       })));
       return;
     }

@@ -351,7 +351,7 @@
                     <AttentionRow icon="fact_check" title={`${pendingLeads} masjid ${pendingLeads === 1 ? 'request' : 'requests'} to review`} copy="Registrations and claims waiting on a decision" count={pendingLeads} onClick={() => data.onOpen && data.onOpen('approvals')} />
                   ) : null}
                   {pendingPosts ? (
-                    <AttentionRow icon="campaign" title={`${pendingPosts} ${pendingPosts === 1 ? 'paigham' : 'paighams'} waiting to go live`} copy="Sent by committees, held for a moderator" count={pendingPosts} onClick={() => data.onOpen && data.onOpen('moderation')} />
+                    <AttentionRow icon="campaign" title={`${pendingPosts} ${pendingPosts === 1 ? 'paigham' : 'paighams'} waiting to go live`} copy="Paighams awaiting a moderation decision" count={pendingPosts} onClick={() => data.onOpen && data.onOpen('moderation')} />
                   ) : null}
                 </div>
               ) : (
@@ -403,7 +403,7 @@
               </section>
 
               <section className="adm-section">
-                <div className="adm-section-head"><strong>Recent decisions</strong><small>{decisions.length} this week</small></div>
+                <div className="adm-section-head"><strong>Recent decisions</strong></div>
                 <div className="list-group" style={{ marginTop: 0, padding: '0 12px' }}>
                   {decisions.map((d) => <DecisionRow key={d.id} decision={d} onClick={() => data.onOpenLead && data.onOpenLead(d.id)} />)}
                 </div>
@@ -523,7 +523,7 @@
 
   function LeadRow({ lead, sourcedName, fmt, onOpen }) {
     const incomplete = lead.status === 'PENDING_DETAILS';
-    const title = lead.masjidName || sourcedName || 'Masjid';
+    const title = lead.masjidName || sourcedName || (incomplete ? 'Incomplete registration' : 'Masjid');
     const place = lead.address ? `${lead.address.city.split(',')[0]} ${lead.address.pincode}` : null;
     const subtitle = [fmt.roleLabel(lead.role), lead.contactName, place].filter(Boolean).join(' · ');
     const Root = incomplete ? 'div' : 'button';
@@ -534,7 +534,7 @@
           : <span className="icon-tile" style={{ '--tile': '40px' }} aria-hidden="true"><span className="mi" data-i="add_home_work"></span></span>}
         <span className="list-item-copy">
           <span className="list-item-title">{title}</span>
-          <span className="list-item-subtitle">{incomplete ? `${lead.contactName} hasn’t finished the form · ${lead.submittedAt.toLowerCase()}` : subtitle}</span>
+          <span className="list-item-subtitle">{incomplete ? [lead.contactName, 'Not submitted for review'].filter(Boolean).join(' · ') : subtitle}</span>
         </span>
         {leadStatusBadge(lead) || <span className="list-item-value">{lead.submittedAt}</span>}
         {incomplete ? null : <span className="mi list-item-chevron" data-i="chevron_right" aria-hidden="true"></span>}
@@ -563,7 +563,7 @@
     const { leadFilters = [], leadFilter, visibleLeads = [], leadsStatus, counts = {}, fmt, quiet } = data;
     const sourcedName = (lead) => (lead.claimedMasjidId && data.sourcedNames ? data.sourcedNames[lead.claimedMasjidId] : null);
     const emptyCopy = {
-      P: quiet ? { title: 'Nothing to review', copy: 'Every request has a decision. New registrations and claims land here the moment they are submitted.' } : { title: 'No matches', copy: 'Nothing waiting matches that search.' },
+      PV: quiet ? { title: 'Nothing to review', copy: 'Every request has a decision. New registrations and claims land here the moment they are submitted.' } : { title: 'No matches', copy: 'Nothing waiting matches that search.' },
       V: { title: 'No approvals yet', copy: 'Approved requests stay here as the record of who verified each masjid.' },
       R: { title: 'Nothing rejected', copy: 'Rejected requests keep the reason the applicant was given.' },
       ALL: { title: 'No requests', copy: 'Nothing has been submitted yet.' },
@@ -577,7 +577,7 @@
           {leadsStatus === 'loading' ? <QueueSkeleton /> : null}
           {leadsStatus === 'error' ? <ErrorState title="Couldn’t load the queue" copy="Nothing was changed. Try again." onRetry={data.onRetry} /> : null}
           {leadsStatus === 'loaded' && !visibleLeads.length ? (
-            <Empty icon={leadFilter === 'P' ? 'check_circle' : 'format_list_bulleted'} title={emptyCopy.title} copy={emptyCopy.copy} />
+            <Empty icon={leadFilter === 'PV' ? 'check_circle' : 'format_list_bulleted'} title={emptyCopy.title} copy={emptyCopy.copy} />
           ) : null}
           {leadsStatus === 'loaded' && visibleLeads.length ? (
             <div className="list-group" style={{ marginTop: 0, padding: '0 12px' }}>
@@ -586,7 +586,7 @@
               ))}
             </div>
           ) : null}
-          {leadsStatus === 'loaded' && leadFilter === 'P' && visibleLeads.length ? (
+          {leadsStatus === 'loaded' && leadFilter === 'PV' && visibleLeads.length ? (
             <p className="adm-foot">Oldest first. Photos and the signed media links are only available while a request is under review.</p>
           ) : null}
         </Body>
@@ -694,7 +694,7 @@
         isOpen={!!open}
         onClose={onClose}
         title="Why is it being rejected?"
-        description={kind === 'post' ? 'The committee reads this, so name what to change.' : 'The applicant reads this in the app, so name what to fix. They can resubmit.'}
+        description={kind === 'post' ? 'Choose why this paigham should not go live.' : 'The applicant reads this in the app, so name what to fix. They can resubmit.'}
         primary={null}
         secondary={null}
         className="opt-sheet adm-reject"
@@ -873,7 +873,7 @@
     const clamp = !full && post.message.length > 140;
     const text = clamp ? `${post.message.slice(0, 140).replace(/\s+\S*$/, '')}…` : post.message;
     return (
-      <article className={`feed-post ${onOpen ? 'adm-post-tap' : ''}`} onClick={onOpen} role={onOpen ? 'button' : undefined} tabIndex={onOpen ? 0 : undefined}>
+      <article className="feed-post">
         <div className="feed-post-head">
           <span className="avatar accent" style={{ '--tile': '44px' }} aria-hidden="true">{post.masjid.name.charAt(0)}</span>
           <span className="feed-post-id">
@@ -890,6 +890,7 @@
           <span className="feed-post-time">{post.createdAt}</span>
         </div>
         <div className="feed-post-admin"><span className="mi" data-i="groups"></span>{post.targetLabel} · {fmt.countLabel(post.masjid.followers)} musalleen</div>
+        {onOpen ? <button type="button" className="btn btn-tonal" onClick={onOpen}>{post.status === 'PENDING' ? 'Review paigham' : 'View paigham'}</button> : null}
       </article>
     );
   }
@@ -897,9 +898,9 @@
   function AdminModerationScreen({ data = {} }) {
     const { postFilters = [], postFilter, visiblePosts = [], postsStatus, counts = {}, fmt } = data;
     const empty = {
-      P: { title: 'Nothing waiting', copy: 'Every paigham a committee sent is live. New ones land here the moment they are sent.' },
+      P: { title: 'Nothing waiting', copy: 'There are no paighams awaiting a moderation decision.' },
       L: { title: 'Nothing live yet', copy: 'Paighams you send live stay here.' },
-      R: { title: 'Nothing rejected', copy: 'Rejected paighams keep the reason the committee was given.' },
+      R: { title: 'Nothing rejected', copy: 'Paighams rejected by a moderator appear here.' },
     }[postFilter] || {};
     return (
       <Screen>
@@ -913,7 +914,7 @@
             </div>
           ) : null}
           {postFilter === 'P' && visiblePosts.length ? (
-            <p className="adm-foot">A committee’s paigham waits here until a moderator sends it live. A super admin’s own paighams go live at once.</p>
+            <p className="adm-foot">Committee and Super Admin paighams go live immediately. Admin paighams need another moderator. Older waiting paighams remain here until reviewed.</p>
           ) : null}
         </Body>
         <Snack snack={data.snack} onClose={data.onCloseSnack} />
