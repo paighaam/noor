@@ -8,8 +8,8 @@
 // yet (see the PROPOSAL notes on P2Note, P2Promo, P2RequestCard and P2RequestRail).
 
 const P2_MASJIDS = {
-  bilal: { key: 'bilal', name: 'Masjid E Bilal', place: 'Bengaluru', code: 'PGM-BLR-1042', photo: '/images/masjid-camera-preview.png', vpa: 'masjidebilal@upi', payee: 'Masjid E Bilal Trust' },
-  jamia: { key: 'jamia', name: 'Jamia Masjid', place: 'Frazer Town', code: 'PGM-BLR-0217', vpa: 'jamiamasjidft@upi', payee: 'Jamia Masjid Frazer Town Trust' },
+  bilal: { key: 'bilal', name: 'Masjid E Bilal', place: 'Bengaluru', code: 'PGM-BLR-1042', photo: '/images/masjid-camera-preview.png', vpa: 'masjidebilal@upi', payee: 'Masjid E Bilal Trust', bankName: 'MASJID E BILAL TRUST' },
+  jamia: { key: 'jamia', name: 'Jamia Masjid', place: 'Frazer Town', code: 'PGM-BLR-0217', vpa: 'jamiamasjidft@upi', payee: 'Jamia Masjid Frazer Town Trust', bankName: 'JAMIA MASJID FRAZER TOWN TRUST' },
 };
 // The follower's primary masjid. It is the one the admin side of this board sets up, so the
 // Friday card and the masjid console always describe the same payee.
@@ -161,10 +161,12 @@ function P2Group({ children, attention = false, label }) {
 function P2Identity({ masjid = P2_MASJID }) {
   return <P2Row lead={<P2MasjidMark masjid={masjid} />} title={masjid.name} subtitle={masjid.place} trailing={<P2Icon name="verified" className="p2-verified" />} />;
 }
-function P2PayeeGroup({ masjid = P2_MASJID, label = 'Verified UPI payee' }) {
+// "Verified payee" is only ever shown beside the name the bank holds for the UPI ID (Cashfree's
+// nameAtBank), and only once a Paigham Super Admin has approved it (TRD §8.1).
+function P2PayeeGroup({ masjid = P2_MASJID, label = 'Pays to' }) {
   return (
     <P2Group label={label}>
-      <P2Row icon="verified" title={masjid.payee} subtitle={masjid.vpa} />
+      <P2Row icon="verified" title={masjid.bankName} subtitle={`Verified payee · ${masjid.vpa}`} />
     </P2Group>
   );
 }
@@ -354,7 +356,7 @@ function P2Review({ go }) {
           <P2Row title="Payee name" value={P2_MASJID.payee} />
           <P2Row title="UPI ID" value={P2_MASJID.vpa} />
         </P2Group>
-        <P2Note>This name and UPI ID are shown to donors. Paigham Admin reviews them before payments are enabled.</P2Note>
+        <P2Note>Paigham checks this UPI ID with the bank, then a Paigham admin reviews it before payments are enabled.</P2Note>
       </P2Scroll>
       <P2Docked>
         <P2Button onClick={() => go('pending')}>Submit for review</P2Button>
@@ -444,10 +446,12 @@ function P2AdminReview({ go }) {
           <P2Row title="City" value={P2_MASJID.place} />
         </P2Group>
         <P2Group label="QR payee">
-          <P2Row title="Payee name" value={P2_MASJID.payee} />
+          <P2Row title="Name on QR" value={P2_MASJID.payee} />
           <P2Row title="UPI ID" value={P2_MASJID.vpa} />
+          <P2Row title="Name at bank" value={P2_MASJID.bankName} />
+          <P2Row title="UPI ID check" trailing={<P2Badge tone="jade">Valid</P2Badge>} />
         </P2Group>
-        <P2Note icon="shield">Check the masjid record against the provider-verified VPA name. This POC does not perform a provider lookup.</P2Note>
+        <P2Note icon="shield">Compare the masjid record with the name the bank holds for this UPI ID. Approve is only available once the UPI ID check is valid.</P2Note>
       </P2Scroll>
       <P2Docked>
         <P2Button onClick={() => go('admin-approved')}>Approve QR</P2Button>
@@ -495,7 +499,7 @@ function P2MasjidDetails({ go, ready = true, requests = P2_REQUESTS }) {
           <>
             <P2Group label="Payments">
               <P2Row title="Status" trailing={<P2Badge tone="jade">Accepting</P2Badge>} />
-              <P2Row title="Payee name" value={P2_MASJID.payee} />
+              <P2Row title="Name at bank" value={P2_MASJID.bankName} />
               <P2Row title="UPI ID" value={P2_MASJID.vpa} />
               <P2Row title="Reviewed" value="20 Sep 2026" />
               <P2Row icon="volunteer_activism" title="Payment requests" subtitle={`${live} live · requests and activity`} onClick={() => go('masjid-payments')} />
@@ -734,7 +738,7 @@ function P2Home({ go, give, friday = false, requests = P2_REQUESTS, primaryAccep
           </div>
           {friday && <P2Promo eyebrow="Jumu‘ah Mubarak" title="Give this Jumu‘ah" copy={`${P2_MASJID.name} · your primary masjid`} action="Give directly" art="./assets/friday-giving.png" onClick={() => give('bilal')} />}
           {empty ? (
-            !friday && primaryAccepting && <P2Promo eyebrow="Your primary masjid" title={`Give to ${P2_MASJID.name}`} copy="Verified UPI payee · pay directly" action="Give directly" art="./assets/friday-giving.png" onClick={() => give('bilal')} />
+            !friday && primaryAccepting && <P2Promo eyebrow="Your primary masjid" title={`Give to ${P2_MASJID.name}`} copy={`Verified payee · ${P2_MASJID.bankName}`} action="Give directly" art="./assets/friday-giving.png" onClick={() => give('bilal')} />
           ) : (
             <>
               <P2Section title="Requests from your masjids" action={{ text: 'View all', onClick: () => go('updates') }} />
@@ -846,8 +850,9 @@ function P2Amount({ go, amount, setAmount, backTo = 'user-home', masjid = P2_MAS
           </div>
         </div>
         <P2AmountField label="Your amount" value={amount} onChange={setAmount} presets={['100', '250', '500', '1000']} />
-        <P2PayeeGroup masjid={masjid} label="Pays to" />
-        <P2Note>Money goes to this UPI payee, not Paigham. Check the name again in your UPI app.</P2Note>
+        <P2PayeeGroup masjid={masjid} />
+        <P2Note>Money goes to this UPI payee, not Paigham. Check the name in your UPI app.</P2Note>
+        <P2Note icon="shield">Paigham keeps a record that you started this payment: the amount, the app you chose and what the app reports back.</P2Note>
       </P2Scroll>
       <P2Docked note={valid ? null : 'Enter an amount greater than ₹0'}>
         <P2Button onClick={() => valid && go('apps')} disabled={!valid}>Choose a UPI app</P2Button>
@@ -899,14 +904,14 @@ function P2Return({ go, kind, app, masjid = P2_MASJID }) {
   const paid = kind === 'android-done';
   const failed = kind === 'android-failed';
   const unknown = kind === 'android-unknown';
-  const explanation = ios ? 'iOS does not return a payment result to Paigham. Check your UPI app or bank for the final status.' : unknown ? `No result came back from ${app}. Check your UPI app or bank for the final status.` : `${app} returned this indication. Check your UPI app or bank for the final status.`;
+  const explanation = ios ? `${app} does not tell Paigham whether the payment went through.` : `Check the final status in ${app}. Paigham does not receive confirmation from your bank.`;
   return (
     <P2Screen>
       <P2AppBar title="Back in Paigham" back={() => go('user-home')} />
       <P2Scroll>
-        <P2Outcome icon={ios ? 'arrow_forward' : paid ? 'check_circle' : failed ? 'error' : 'info'} tone={paid ? 'success' : failed ? 'error' : 'neutral'} title={ios ? 'Check your UPI app' : paid ? 'App reported paid' : failed ? 'App reported not completed' : 'No result from the app'} description={explanation} />
+        <P2Outcome icon={ios ? 'arrow_forward' : paid ? 'check_circle' : failed ? 'error' : 'info'} tone={paid ? 'success' : failed ? 'error' : 'neutral'} title={ios ? `Check ${app}` : paid ? `${app} reported paid` : failed ? `${app} reported not completed` : `No result from ${app}`} description={explanation} />
         <P2PayeeGroup masjid={masjid} label="Payee" />
-        <P2Note>{ios ? 'Paigham does not know whether this payment succeeded.' : 'Indicative only. Paigham does not receive confirmation from the bank. This is not a payment receipt.'}</P2Note>
+        <P2Note>{ios ? `Open ${app} to see whether the payment went through.` : `This is what ${app} reported, not a receipt. Your bank is the source of truth.`}</P2Note>
         <P2Group><P2Row icon="info" title={ios ? 'Why no payment status?' : 'Why is this status only indicative?'} onClick={() => go('terms')} /></P2Group>
       </P2Scroll>
       <P2Docked><P2Button onClick={() => go('user-home')}>Done</P2Button></P2Docked>
