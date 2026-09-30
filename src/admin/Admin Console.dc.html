@@ -13,6 +13,7 @@
 <x-dc>
 <helmet>
   <link rel="stylesheet" href="../_ds/noor-design-system-46f42e91-1858-412f-bdb6-560a6cc3df9f/colors_and_type.css">
+  <link rel="stylesheet" href="../_ds/noor-design-system-46f42e91-1858-412f-bdb6-560a6cc3df9f/admin_colors.css">
   <link rel="stylesheet" href="../_theme/poc.css">
   <link rel="stylesheet" href="../_theme/components.css">
   <link rel="stylesheet" href="../_theme/icons.css">
@@ -48,7 +49,7 @@
           subtitle="The platform admin console: a hub that leads with who signed up and what is waiting, the approvals queue with a new-masjid request and a claim on a sourced masjid reviewed against the server's real contract, and the paigham moderation queue. One state model drives every frame and the live device."
           hint-size="1440px,92px"></x-import>
 
-<div class="poc-stage">
+<div class="poc-stage" data-brand="admin" data-admin-palette="olive">
   <div class="poc-frames">
     <x-import component="AdminBoard" from="./storyboards/admin-board.jsx"
               active="{{ activeFrame }}" on-select-frame="{{ selectFrame }}"
@@ -183,7 +184,7 @@ class Component extends DCLogic {
       const data = window.buildAdminData(st, {});
       const name = data.lead ? (data.record ? data.record.name : data.lead.masjidName) : 'Masjid';
       return window.adminApplyPatch(st, {
-        working: null, route: 'approvals', stepDir: 'back', leadFilter: 'P', corrections: {},
+        working: null, route: 'approvals', stepDir: 'back', leadFilter: 'PV', corrections: {},
         decided: { ...st.decided, [st.leadId]: { status: 'VERIFIED', decision: { by: 'Toufeeq Ahamed', on: 'Just now', masjidId: isClaim ? 'M560051012' : 'M570019004', corrections: data.correctionCount || undefined } } },
         snack: { tone: 'success', message: isClaim ? `${name} has its committee` : `${name} is live · M570019004` },
       });
@@ -201,7 +202,7 @@ class Component extends DCLogic {
       this.after(1200, () => this.setState((st) => window.adminApplyPatch(st, {
         working: null, route: 'moderation', stepDir: 'back',
         postDecided: { ...st.postDecided, [st.postId]: { status: 'REJECTED', decision: { by: 'Toufeeq Ahamed', on: 'Just now', reason } } },
-        snack: { tone: 'success', message: 'Paigham rejected · the committee was told why' },
+        snack: { tone: 'success', message: 'Paigham rejected' },
       })));
       return;
     }

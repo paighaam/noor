@@ -8,7 +8,7 @@
 // Server truth this model mirrors (paigham-core-server, read 2026-09-12):
 //   GET  /v1/core/admin                       → AdminDto { name, role: ADMIN | SUPER_ADMIN, status }
 //   GET  /v1/core/admin/destination           → HOME | MASJID | INVALID_ADMIN
-//   GET  /v1/core/admin/leads?filter=         → AdminLeadDto[]; LeadFilterType P | V | R | ALL
+//   GET  /v1/core/admin/leads?filter=         → AdminLeadDto[]; LeadFilterType PV | V | R | ALL
 //   GET  /v1/core/admin/lead/{id}/media-url   → signed URL, ONLY while status = PENDING_VERIFICATION
 //   POST /v1/core/admin/lead/approve          → new masjid (registration) or claim grant (409 if taken)
 //   POST /v1/core/admin/lead/reject           → REJECTED + lead_revisions row carrying the reason
@@ -263,7 +263,7 @@
 
     signupsWindow: 'd8', // 'h24' | 'd8' | 'd30' | 'all'
 
-    leadFilter: 'P', // LeadFilterType: 'P' (to review) | 'V' | 'R' | 'ALL'
+    leadFilter: 'PV', // LeadFilterType: 'PV' (submitted for review) | 'V' | 'R' | 'ALL'
     leadSearch: '',
     leadsStatus: 'loaded', // 'loading' | 'loaded' | 'error'
     leadId: null,
@@ -365,7 +365,7 @@
   const withCommas = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
   const LEAD_FILTERS = [
-    { id: 'P', label: 'Waiting', matches: (st) => st === 'PENDING_VERIFICATION' },
+    { id: 'PV', label: 'Waiting', matches: (st) => st === 'PENDING_VERIFICATION' },
     { id: 'V', label: 'Approved', matches: (st) => st === 'VERIFIED' },
     { id: 'R', label: 'Rejected', matches: (st) => st === 'REJECTED' },
     { id: 'ALL', label: 'All', matches: () => true },

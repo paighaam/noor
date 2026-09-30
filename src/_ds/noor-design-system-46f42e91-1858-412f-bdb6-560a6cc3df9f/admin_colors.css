@@ -1,0 +1,524 @@
+/* Admin brand previews. Navy is the default; other palettes use data-admin-palette. Opt in on a theme boundary with data-brand="admin".
+   Load after colors_and_type.css. Geometry, typography and status hues are inherited.
+   These are preview candidates; production Admin does not opt in yet. */
+[data-brand="admin"] {
+  --color-surface-primary: #F5F7FC;
+  --color-surface-secondary: #EAF0FB;
+  --color-surface-card: #FFFFFF;
+  --color-surface-overlay: rgba(245, 247, 252, 0.6);
+
+  --color-action-primary: #2457C5;
+  --color-action-primary-tint: rgba(36, 87, 197, 0.12);
+  --color-action-primary-inverse: #FFFFFF;
+  --color-action-secondary: #405B7A;
+  --color-action-secondary-inverse: #FFFFFF;
+  --color-action-border: #2457C5;
+  --color-action-background: #DCE3EF;
+
+  --color-input-background: #EAF0FB;
+  --color-input-text: #17243B;
+  --color-input-placeholder: #52627A;
+  --color-input-border: #DCE3EF;
+  --color-input-border-focused: #2457C5;
+  --color-input-border-disabled: #DCE3EF;
+
+  --color-info-primary: #17243B;
+  --color-info-primary-inverse: #FFFFFF;
+  --color-info-secondary: #52627A;
+  --color-info-secondary-inverse: #52627A;
+  --color-info-tertiary: #52627A;
+  --color-info-faint: #8795AA;
+  --color-neutral-border: #DCE3EF;
+
+  /* The existing growth card consumes the legacy emerald slot as its brand wash.
+     Keep the same gradient geometry and alpha stops, substituting Admin hues. */
+  --gradient-emerald: linear-gradient(155deg, rgba(64, 91, 122, 0.10) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(36, 87, 197, 0.22) 0%, rgba(64, 91, 122, 0.12) 35%,
+      rgba(23, 36, 59, 0.05) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(64, 91, 122, 0.09) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(36, 87, 197, 0.22) 0%, rgba(64, 91, 122, 0.13) 35%,
+      rgba(23, 36, 59, 0.06) 60%, transparent 82%);
+  --shadow-button: 0 8px 24px -8px color-mix(in oklab, var(--color-action-primary) 60%, transparent);
+}
+
+[data-theme="dark"] [data-brand="admin"],
+[data-theme="dark"][data-brand="admin"] {
+  --color-surface-primary: #0C1423;
+  --color-surface-secondary: #1B2B44;
+  --color-surface-card: #152238;
+  --color-surface-overlay: rgba(21, 34, 56, 0.8);
+
+  --color-action-primary: #8FB4FF;
+  --color-action-primary-tint: rgba(143, 180, 255, 0.12);
+  --color-action-primary-inverse: #0C1423;
+  --color-action-secondary: #6B8BB6;
+  --color-action-secondary-inverse: #0C1423;
+  --color-action-border: #8FB4FF;
+  --color-action-background: #2A3B55;
+
+  --color-input-background: #1B2B44;
+  --color-input-text: #EDF3FF;
+  --color-input-placeholder: #AFBED5;
+  --color-input-border: #2A3B55;
+  --color-input-border-focused: #8FB4FF;
+  --color-input-border-disabled: #2A3B55;
+
+  --color-info-primary: #EDF3FF;
+  --color-info-primary-inverse: #0C1423;
+  --color-info-secondary: #AFBED5;
+  --color-info-secondary-inverse: #52627A;
+  --color-info-tertiary: #AFBED5;
+  --color-info-faint: #72849F;
+  --color-neutral-border: #2A3B55;
+
+  --gradient-emerald: linear-gradient(155deg, rgba(174, 196, 227, 0.12) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(143, 180, 255, 0.26) 0%, rgba(174, 196, 227, 0.14) 35%,
+      rgba(36, 87, 197, 0.06) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(174, 196, 227, 0.11) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(143, 180, 255, 0.26) 0%, rgba(174, 196, 227, 0.14) 35%,
+      rgba(36, 87, 197, 0.07) 60%, transparent 82%);
+  --shadow-button: 0 10px 28px -10px color-mix(in oklab, var(--color-action-primary) 70%, transparent);
+}
+
+/* Additional Admin directions. Only color tokens vary between presets. */
+/* Plum and linen — light. */
+[data-brand="admin"][data-admin-palette="plum"] {
+  --color-surface-primary: #FAF6FB;
+  --color-surface-secondary: #F1EAF4;
+  --color-surface-card: #FFFFFF;
+  --color-action-primary: #79478F;
+  --color-action-primary-inverse: #FFFFFF;
+  --color-action-secondary: #705573;
+  --color-action-secondary-inverse: #FFFFFF;
+  --color-action-border: #79478F;
+  --color-action-background: #E6DBEA;
+  --color-input-background: #F1EAF4;
+  --color-input-text: #302435;
+  --color-input-placeholder: #716077;
+  --color-input-border: #E6DBEA;
+  --color-input-border-focused: #79478F;
+  --color-input-border-disabled: #E6DBEA;
+  --color-info-primary: #302435;
+  --color-info-primary-inverse: #FFFFFF;
+  --color-info-secondary: #716077;
+  --color-info-secondary-inverse: #716077;
+  --color-info-tertiary: #716077;
+  --color-info-faint: #A18AA9;
+  --color-neutral-border: #E6DBEA;
+  --color-surface-overlay: rgba(250, 246, 251, 0.6);
+  --color-action-primary-tint: rgba(121, 71, 143, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(112, 85, 115, 0.1) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(121, 71, 143, 0.22) 0%, rgba(112, 85, 115, 0.12) 35%,
+      rgba(48, 36, 53, 0.05) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(112, 85, 115, 0.09) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(121, 71, 143, 0.22) 0%, rgba(112, 85, 115, 0.13) 35%,
+      rgba(48, 36, 53, 0.06) 60%, transparent 82%);
+}
+
+/* Plum and linen — dark. */
+[data-theme="dark"] [data-brand="admin"][data-admin-palette="plum"],
+[data-theme="dark"][data-brand="admin"][data-admin-palette="plum"] {
+  --color-surface-primary: #19131E;
+  --color-surface-secondary: #2C2133;
+  --color-surface-card: #211926;
+  --color-action-primary: #D1A1EB;
+  --color-action-primary-inverse: #19131E;
+  --color-action-secondary: #987CA9;
+  --color-action-secondary-inverse: #19131E;
+  --color-action-border: #D1A1EB;
+  --color-action-background: #44334D;
+  --color-input-background: #2C2133;
+  --color-input-text: #F6EDF9;
+  --color-input-placeholder: #CEB8D7;
+  --color-input-border: #44334D;
+  --color-input-border-focused: #D1A1EB;
+  --color-input-border-disabled: #44334D;
+  --color-info-primary: #F6EDF9;
+  --color-info-primary-inverse: #19131E;
+  --color-info-secondary: #CEB8D7;
+  --color-info-secondary-inverse: #716077;
+  --color-info-tertiary: #CEB8D7;
+  --color-info-faint: #937E9D;
+  --color-neutral-border: #44334D;
+  --color-surface-overlay: rgba(33, 25, 38, 0.8);
+  --color-action-primary-tint: rgba(209, 161, 235, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(152, 124, 169, 0.12) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(209, 161, 235, 0.26) 0%, rgba(152, 124, 169, 0.14) 35%,
+      rgba(121, 71, 143, 0.06) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(152, 124, 169, 0.11) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(209, 161, 235, 0.26) 0%, rgba(152, 124, 169, 0.14) 35%,
+      rgba(121, 71, 143, 0.07) 60%, transparent 82%);
+}
+
+/* Copper and ivory — light. */
+[data-brand="admin"][data-admin-palette="copper"] {
+  --color-surface-primary: #FCF8F3;
+  --color-surface-secondary: #F5ECE2;
+  --color-surface-card: #FFFFFF;
+  --color-action-primary: #A34F2B;
+  --color-action-primary-inverse: #FFFFFF;
+  --color-action-secondary: #785A48;
+  --color-action-secondary-inverse: #FFFFFF;
+  --color-action-border: #A34F2B;
+  --color-action-background: #E8DDD0;
+  --color-input-background: #F5ECE2;
+  --color-input-text: #34271F;
+  --color-input-placeholder: #756153;
+  --color-input-border: #E8DDD0;
+  --color-input-border-focused: #A34F2B;
+  --color-input-border-disabled: #E8DDD0;
+  --color-info-primary: #34271F;
+  --color-info-primary-inverse: #FFFFFF;
+  --color-info-secondary: #756153;
+  --color-info-secondary-inverse: #756153;
+  --color-info-tertiary: #756153;
+  --color-info-faint: #A18B79;
+  --color-neutral-border: #E8DDD0;
+  --color-surface-overlay: rgba(252, 248, 243, 0.6);
+  --color-action-primary-tint: rgba(163, 79, 43, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(120, 90, 72, 0.1) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(163, 79, 43, 0.22) 0%, rgba(120, 90, 72, 0.12) 35%,
+      rgba(52, 39, 31, 0.05) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(120, 90, 72, 0.09) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(163, 79, 43, 0.22) 0%, rgba(120, 90, 72, 0.13) 35%,
+      rgba(52, 39, 31, 0.06) 60%, transparent 82%);
+}
+
+/* Copper and ivory — dark. */
+[data-theme="dark"] [data-brand="admin"][data-admin-palette="copper"],
+[data-theme="dark"][data-brand="admin"][data-admin-palette="copper"] {
+  --color-surface-primary: #1C1511;
+  --color-surface-secondary: #30241D;
+  --color-surface-card: #251B16;
+  --color-action-primary: #F0AC88;
+  --color-action-primary-inverse: #1C1511;
+  --color-action-secondary: #A87D64;
+  --color-action-secondary-inverse: #1C1511;
+  --color-action-border: #F0AC88;
+  --color-action-background: #49362B;
+  --color-input-background: #30241D;
+  --color-input-text: #FFF1E7;
+  --color-input-placeholder: #D5BDAA;
+  --color-input-border: #49362B;
+  --color-input-border-focused: #F0AC88;
+  --color-input-border-disabled: #49362B;
+  --color-info-primary: #FFF1E7;
+  --color-info-primary-inverse: #1C1511;
+  --color-info-secondary: #D5BDAA;
+  --color-info-secondary-inverse: #756153;
+  --color-info-tertiary: #D5BDAA;
+  --color-info-faint: #9D8371;
+  --color-neutral-border: #49362B;
+  --color-surface-overlay: rgba(37, 27, 22, 0.8);
+  --color-action-primary-tint: rgba(240, 172, 136, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(168, 125, 100, 0.12) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(240, 172, 136, 0.26) 0%, rgba(168, 125, 100, 0.14) 35%,
+      rgba(163, 79, 43, 0.06) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(168, 125, 100, 0.11) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(240, 172, 136, 0.26) 0%, rgba(168, 125, 100, 0.14) 35%,
+      rgba(163, 79, 43, 0.07) 60%, transparent 82%);
+}
+
+/* Graphite and gold — light. */
+[data-brand="admin"][data-admin-palette="graphite"] {
+  --color-surface-primary: #F6F7F7;
+  --color-surface-secondary: #EBEEF0;
+  --color-surface-card: #FFFFFF;
+  --color-action-primary: #3F505C;
+  --color-action-primary-inverse: #FFFFFF;
+  --color-action-secondary: #55616A;
+  --color-action-secondary-inverse: #FFFFFF;
+  --color-action-border: #3F505C;
+  --color-action-background: #DCE2E5;
+  --color-input-background: #EBEEF0;
+  --color-input-text: #242C31;
+  --color-input-placeholder: #5E696F;
+  --color-input-border: #DCE2E5;
+  --color-input-border-focused: #3F505C;
+  --color-input-border-disabled: #DCE2E5;
+  --color-info-primary: #242C31;
+  --color-info-primary-inverse: #FFFFFF;
+  --color-info-secondary: #5E696F;
+  --color-info-secondary-inverse: #5E696F;
+  --color-info-tertiary: #5E696F;
+  --color-info-faint: #8F9A9F;
+  --color-neutral-border: #DCE2E5;
+  --color-surface-overlay: rgba(246, 247, 247, 0.6);
+  --color-action-primary-tint: rgba(63, 80, 92, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(85, 97, 106, 0.1) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(63, 80, 92, 0.22) 0%, rgba(85, 97, 106, 0.12) 35%,
+      rgba(36, 44, 49, 0.05) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(85, 97, 106, 0.09) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(63, 80, 92, 0.22) 0%, rgba(85, 97, 106, 0.13) 35%,
+      rgba(36, 44, 49, 0.06) 60%, transparent 82%);
+}
+
+/* Graphite and gold — dark. */
+[data-theme="dark"] [data-brand="admin"][data-admin-palette="graphite"],
+[data-theme="dark"][data-brand="admin"][data-admin-palette="graphite"] {
+  --color-surface-primary: #131719;
+  --color-surface-secondary: #262D31;
+  --color-surface-card: #1C2225;
+  --color-action-primary: #CAD6E0;
+  --color-action-primary-inverse: #131719;
+  --color-action-secondary: #7E8A92;
+  --color-action-secondary-inverse: #131719;
+  --color-action-border: #CAD6E0;
+  --color-action-background: #374249;
+  --color-input-background: #262D31;
+  --color-input-text: #F0F3F5;
+  --color-input-placeholder: #BDC7CD;
+  --color-input-border: #374249;
+  --color-input-border-focused: #CAD6E0;
+  --color-input-border-disabled: #374249;
+  --color-info-primary: #F0F3F5;
+  --color-info-primary-inverse: #131719;
+  --color-info-secondary: #BDC7CD;
+  --color-info-secondary-inverse: #5E696F;
+  --color-info-tertiary: #BDC7CD;
+  --color-info-faint: #849299;
+  --color-neutral-border: #374249;
+  --color-surface-overlay: rgba(28, 34, 37, 0.8);
+  --color-action-primary-tint: rgba(202, 214, 224, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(126, 138, 146, 0.12) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(202, 214, 224, 0.26) 0%, rgba(126, 138, 146, 0.14) 35%,
+      rgba(63, 80, 92, 0.06) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(126, 138, 146, 0.11) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(202, 214, 224, 0.26) 0%, rgba(126, 138, 146, 0.14) 35%,
+      rgba(63, 80, 92, 0.07) 60%, transparent 82%);
+}
+
+/* Teal and mist — light. */
+[data-brand="admin"][data-admin-palette="teal"] {
+  --color-surface-primary: #F4F9F8;
+  --color-surface-secondary: #E6F0ED;
+  --color-surface-card: #FFFFFF;
+  --color-action-primary: #1F7168;
+  --color-action-primary-inverse: #FFFFFF;
+  --color-action-secondary: #466C66;
+  --color-action-secondary-inverse: #FFFFFF;
+  --color-action-border: #1F7168;
+  --color-action-background: #D5E4DF;
+  --color-input-background: #E6F0ED;
+  --color-input-text: #17332F;
+  --color-input-placeholder: #4E6863;
+  --color-input-border: #D5E4DF;
+  --color-input-border-focused: #1F7168;
+  --color-input-border-disabled: #D5E4DF;
+  --color-info-primary: #17332F;
+  --color-info-primary-inverse: #FFFFFF;
+  --color-info-secondary: #4E6863;
+  --color-info-secondary-inverse: #4E6863;
+  --color-info-tertiary: #4E6863;
+  --color-info-faint: #8AA19B;
+  --color-neutral-border: #D5E4DF;
+  --color-surface-overlay: rgba(244, 249, 248, 0.6);
+  --color-action-primary-tint: rgba(31, 113, 104, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(70, 108, 102, 0.1) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(31, 113, 104, 0.22) 0%, rgba(70, 108, 102, 0.12) 35%,
+      rgba(23, 51, 47, 0.05) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(70, 108, 102, 0.09) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(31, 113, 104, 0.22) 0%, rgba(70, 108, 102, 0.13) 35%,
+      rgba(23, 51, 47, 0.06) 60%, transparent 82%);
+}
+
+/* Teal and mist — dark. */
+[data-theme="dark"] [data-brand="admin"][data-admin-palette="teal"],
+[data-theme="dark"][data-brand="admin"][data-admin-palette="teal"] {
+  --color-surface-primary: #101B1B;
+  --color-surface-secondary: #203330;
+  --color-surface-card: #172322;
+  --color-action-primary: #79C9BB;
+  --color-action-primary-inverse: #101B1B;
+  --color-action-secondary: #6E8F87;
+  --color-action-secondary-inverse: #101B1B;
+  --color-action-border: #79C9BB;
+  --color-action-background: #304B45;
+  --color-input-background: #203330;
+  --color-input-text: #EAF7F3;
+  --color-input-placeholder: #AECFC6;
+  --color-input-border: #304B45;
+  --color-input-border-focused: #79C9BB;
+  --color-input-border-disabled: #304B45;
+  --color-info-primary: #EAF7F3;
+  --color-info-primary-inverse: #101B1B;
+  --color-info-secondary: #AECFC6;
+  --color-info-secondary-inverse: #4E6863;
+  --color-info-tertiary: #AECFC6;
+  --color-info-faint: #759C91;
+  --color-neutral-border: #304B45;
+  --color-surface-overlay: rgba(23, 35, 34, 0.8);
+  --color-action-primary-tint: rgba(121, 201, 187, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(110, 143, 135, 0.12) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(121, 201, 187, 0.26) 0%, rgba(110, 143, 135, 0.14) 35%,
+      rgba(31, 113, 104, 0.06) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(110, 143, 135, 0.11) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(121, 201, 187, 0.26) 0%, rgba(110, 143, 135, 0.14) 35%,
+      rgba(31, 113, 104, 0.07) 60%, transparent 82%);
+}
+
+/* Wine and parchment — light. */
+[data-brand="admin"][data-admin-palette="wine"] {
+  --color-surface-primary: #FCF6F7;
+  --color-surface-secondary: #F7E9EE;
+  --color-surface-card: #FFFFFF;
+  --color-action-primary: #963F5C;
+  --color-action-primary-inverse: #FFFFFF;
+  --color-action-secondary: #7B5362;
+  --color-action-secondary-inverse: #FFFFFF;
+  --color-action-border: #963F5C;
+  --color-action-background: #EBD6DF;
+  --color-input-background: #F7E9EE;
+  --color-input-text: #38232C;
+  --color-input-placeholder: #7E5A69;
+  --color-input-border: #EBD6DF;
+  --color-input-border-focused: #963F5C;
+  --color-input-border-disabled: #EBD6DF;
+  --color-info-primary: #38232C;
+  --color-info-primary-inverse: #FFFFFF;
+  --color-info-secondary: #7E5A69;
+  --color-info-secondary-inverse: #7E5A69;
+  --color-info-tertiary: #7E5A69;
+  --color-info-faint: #AA8795;
+  --color-neutral-border: #EBD6DF;
+  --color-surface-overlay: rgba(252, 246, 247, 0.6);
+  --color-action-primary-tint: rgba(150, 63, 92, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(123, 83, 98, 0.1) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(150, 63, 92, 0.22) 0%, rgba(123, 83, 98, 0.12) 35%,
+      rgba(56, 35, 44, 0.05) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(123, 83, 98, 0.09) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(150, 63, 92, 0.22) 0%, rgba(123, 83, 98, 0.13) 35%,
+      rgba(56, 35, 44, 0.06) 60%, transparent 82%);
+}
+
+/* Wine and parchment — dark. */
+[data-theme="dark"] [data-brand="admin"][data-admin-palette="wine"],
+[data-theme="dark"][data-brand="admin"][data-admin-palette="wine"] {
+  --color-surface-primary: #201219;
+  --color-surface-secondary: #36202A;
+  --color-surface-card: #2A1922;
+  --color-action-primary: #F1AAC4;
+  --color-action-primary-inverse: #201219;
+  --color-action-secondary: #A87A8D;
+  --color-action-secondary-inverse: #201219;
+  --color-action-border: #F1AAC4;
+  --color-action-background: #53303F;
+  --color-input-background: #36202A;
+  --color-input-text: #FFEFF5;
+  --color-input-placeholder: #D9B3C3;
+  --color-input-border: #53303F;
+  --color-input-border-focused: #F1AAC4;
+  --color-input-border-disabled: #53303F;
+  --color-info-primary: #FFEFF5;
+  --color-info-primary-inverse: #201219;
+  --color-info-secondary: #D9B3C3;
+  --color-info-secondary-inverse: #7E5A69;
+  --color-info-tertiary: #D9B3C3;
+  --color-info-faint: #A17789;
+  --color-neutral-border: #53303F;
+  --color-surface-overlay: rgba(42, 25, 34, 0.8);
+  --color-action-primary-tint: rgba(241, 170, 196, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(168, 122, 141, 0.12) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(241, 170, 196, 0.26) 0%, rgba(168, 122, 141, 0.14) 35%,
+      rgba(150, 63, 92, 0.06) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(168, 122, 141, 0.11) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(241, 170, 196, 0.26) 0%, rgba(168, 122, 141, 0.14) 35%,
+      rgba(150, 63, 92, 0.07) 60%, transparent 82%);
+}
+
+/* Olive and sand — light. */
+[data-brand="admin"][data-admin-palette="olive"] {
+  --color-surface-primary: #F9F9F0;
+  --color-surface-secondary: #EFF0E0;
+  --color-surface-card: #FFFFFF;
+  --color-action-primary: #61713D;
+  --color-action-primary-inverse: #FFFFFF;
+  --color-action-secondary: #636947;
+  --color-action-secondary-inverse: #FFFFFF;
+  --color-action-border: #61713D;
+  --color-action-background: #E0E4CE;
+  --color-input-background: #EFF0E0;
+  --color-input-text: #2C3022;
+  --color-input-placeholder: #626B50;
+  --color-input-border: #E0E4CE;
+  --color-input-border-focused: #61713D;
+  --color-input-border-disabled: #E0E4CE;
+  --color-info-primary: #2C3022;
+  --color-info-primary-inverse: #FFFFFF;
+  --color-info-secondary: #626B50;
+  --color-info-secondary-inverse: #626B50;
+  --color-info-tertiary: #626B50;
+  --color-info-faint: #949C7F;
+  --color-neutral-border: #E0E4CE;
+  --color-surface-overlay: rgba(249, 249, 240, 0.6);
+  --color-action-primary-tint: rgba(97, 113, 61, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(99, 105, 71, 0.1) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(97, 113, 61, 0.22) 0%, rgba(99, 105, 71, 0.12) 35%,
+      rgba(44, 48, 34, 0.05) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(99, 105, 71, 0.09) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(97, 113, 61, 0.22) 0%, rgba(99, 105, 71, 0.13) 35%,
+      rgba(44, 48, 34, 0.06) 60%, transparent 82%);
+}
+
+/* Olive and sand — dark. */
+[data-theme="dark"] [data-brand="admin"][data-admin-palette="olive"],
+[data-theme="dark"][data-brand="admin"][data-admin-palette="olive"] {
+  --color-surface-primary: #15180F;
+  --color-surface-secondary: #2B3020;
+  --color-surface-card: #1E2215;
+  --color-action-primary: #BECF89;
+  --color-action-primary-inverse: #15180F;
+  --color-action-secondary: #8A8B5D;
+  --color-action-secondary-inverse: #15180F;
+  --color-action-border: #BECF89;
+  --color-action-background: #414B2D;
+  --color-input-background: #2B3020;
+  --color-input-text: #F3F5E7;
+  --color-input-placeholder: #C6CFA8;
+  --color-input-border: #414B2D;
+  --color-input-border-focused: #BECF89;
+  --color-input-border-disabled: #414B2D;
+  --color-info-primary: #F3F5E7;
+  --color-info-primary-inverse: #15180F;
+  --color-info-secondary: #C6CFA8;
+  --color-info-secondary-inverse: #626B50;
+  --color-info-tertiary: #C6CFA8;
+  --color-info-faint: #909B6E;
+  --color-neutral-border: #414B2D;
+  --color-surface-overlay: rgba(30, 34, 21, 0.8);
+  --color-action-primary-tint: rgba(190, 207, 137, 0.12);
+  --gradient-emerald: linear-gradient(155deg, rgba(138, 139, 93, 0.12) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(190, 207, 137, 0.26) 0%, rgba(138, 139, 93, 0.14) 35%,
+      rgba(97, 113, 61, 0.06) 60%, transparent 82%);
+  --gradient-sapphire: linear-gradient(155deg, rgba(138, 139, 93, 0.11) 0%, transparent 55%),
+    radial-gradient(120% 100% at 12% -10%,
+      rgba(190, 207, 137, 0.26) 0%, rgba(138, 139, 93, 0.14) 35%,
+      rgba(97, 113, 61, 0.07) 60%, transparent 82%);
+}

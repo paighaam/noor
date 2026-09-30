@@ -109,6 +109,9 @@ entry) or define it in that page's helmet — never leave it owned by a differen
   `.nb-bar`, …). Screens and DS pages must use these classes instead of re-implementing components
   inline — `components.css` is the sole home for component styling; pages keep only page-chrome
   (layout) styles inline. The Atoms / Molecules / Organisms pages are the visual reference.
+- **Admin identity:** `admin_colors.css` owns the approved Olive & sand preset. Scope it with
+  `data-brand="admin"` and `data-admin-palette="olive"`; keep the consumer palette, component
+  geometry and status colors intact. `src/admin/theme/Admin Theme.dc.html` retains the comparisons.
 - **Theme-aware always:** every page loads `chrome.js` in `<head>` (after `support.js`) and
   `poc.css` + `components.css` in the helmet; body background is `var(--canvas-bg)`. Never set a
   hardcoded `data-theme` or a `dark` prop on the device frame.
