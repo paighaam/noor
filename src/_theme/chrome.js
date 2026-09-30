@@ -84,6 +84,7 @@
     { id: 'masjid', num: '04', title: 'Masjid', items: [
       { name: 'Masjid Onboarding', file: 'masjid-register/Masjid Onboarding.dc.html#entry', icon: 'add_home_work', meta: 'Section board · My Masjids sheet · screen-by-screen storyboard · 41 states' },
       { name: 'Masjid Console', file: 'masjid-operations/Masjid Console.dc.html', icon: 'campaign', meta: 'Section board · the masjid console · hub → committee · musalleen · details · invitations · send a paigham · 74 states' },
+      { name: 'Payments POC', file: 'payments-poc/Payments POC.dc.html', icon: 'account_balance', meta: 'POC · QR setup · Admin review · payment requests with end dates · Friday giving · 35 states' },
       { name: 'Salaah Timing Rules', file: 'masjid-operations/Salaah Timing Rules.dc.html', icon: 'schedule', meta: 'Section board · the whole Salaah section · the day dragged by rule · board scan · per-prayer rule · publish · 33 states' },
       { name: 'Admin Console', file: 'admin/Admin Console.dc.html', icon: 'dashboard', meta: 'Section board · platform admin · hub with signups · approvals queue · request and claim review · paigham moderation · 33 states' }
     ]},
