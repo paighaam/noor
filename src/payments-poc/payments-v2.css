@@ -34,6 +34,8 @@
 .p2-scroll.over-nav{gap:0;padding:0 0 120px}
 .p2-scroll.under-fab{padding-bottom:104px}
 .p2-scroll>.list-group{margin-top:0}
+/* Board framing: a frame opened scrolled to a section measures offsets from the scroll column. */
+.p2-scroll.is-anchored{position:relative}
 /* A scroll column must not squeeze its cards to fit; it scrolls instead. */
 .p2-scroll>*{flex-shrink:0}
 .p2-heading{display:flex;flex-direction:column;gap:6px}
@@ -52,6 +54,9 @@
 .p2-textarea textarea.val::placeholder{color:var(--color-input-placeholder)}
 .p2-reminder{padding-bottom:var(--size-lg)}
 .p2-reminder-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--size-md);padding:0 var(--size-sm)}
+/* One action only: an ended request (Extend), a request at the extension limit (Mark as met),
+   or a returned replacement QR (Scan again). */
+.p2-reminder-actions.single{grid-template-columns:1fr}
 .p2-console-head{display:flex;align-items:center;gap:var(--size-lg);min-height:54px}
 .p2-console-id{flex:1;min-width:0;display:flex;flex-direction:column}
 .p2-console-head strong{font-size:15px}
