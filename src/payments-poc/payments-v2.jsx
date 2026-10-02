@@ -104,10 +104,10 @@ const p2AmountError = (value, max, maxCopy) => {
   if (amount > max) return maxCopy;
   return null;
 };
-// A frame's optional third entry marks the 2 Oct review fixes awaiting approval: 'new' for a
-// proposed frame, 'changed' for an approved frame whose content these fixes alter.
+// A frame's optional third entry marks the 2 Oct review fixes, approved as drawn by the product
+// owner on 2 Oct 2026: 'new' for a frame they added, 'changed' for an earlier frame they alter.
 const P2_ROWS = [
-  { number: '01', title: 'Masjid · activate payments', icon: 'qr_code_scanner', frames: [['console', 'Console nudge'], ['scan', 'Scan existing QR'], ['review', 'Review payee'], ['pending', 'Awaiting review'], ['ready', 'Payments ready', 'changed']] },
+  { number: '01', title: 'Masjid · activate payments', icon: 'qr_code_scanner', frames: [['console', 'Console nudge'], ['scan', 'Scan existing QR'], ['review', 'Review payee'], ['pending', 'Awaiting review', 'changed'], ['ready', 'Payments ready', 'changed']] },
   { number: '02', title: 'Paigham Admin · human review', icon: 'shield', frames: [['admin-home', 'Admin Console'], ['admin-queue', 'Payment QR queue'], ['admin-review', 'Review match'], ['admin-approved', 'Approved'], ['admin-returned', 'Returned']] },
   { number: '03', title: 'Masjid · requests & activity', icon: 'campaign', frames: [['console-ready', 'Console · Payments entry'], ['masjid-details', 'Details · payment record', 'changed'], ['masjid-payments', 'Payments hub + FAB'], ['request-amount', '1 · Amount needed', 'changed'], ['request-amount-invalid', '1 · Amount · invalid on tap', 'new'], ['request-details', '2 · Title (optional)'], ['request-review', '3 · Review'], ['request-ends', '3 · End date sheet'], ['published', 'Visible to followers'], ['close-confirm', 'Mark as met · confirm'], ['hub-extend', 'Ended · extend within 7 days', 'new'], ['hub-ended-list', 'Ended · why Extend is unavailable', 'new'], ['reminder-cap', 'Ending soon · extension limit', 'new'], ['initiations', 'Initiations only']] },
   { number: '04', title: 'Follower · discover', icon: 'home', frames: [['user-home', 'Friday · primary masjid card'], ['user-home-weekday', 'Weekday · requests carousel'], ['user-home-empty', 'No requests · give to primary'], ['user-home-none', 'No requests · primary not on UPI'], ['user-home-committee', 'Committee · split FAB'], ['updates', 'All requests'], ['choose-masjid', 'Choose a masjid', 'changed'], ['user-scan', 'Scan masjid QR']] },
@@ -360,8 +360,10 @@ const P2_REPLACE_COPY = 'The current payee stays active until Paigham Admin appr
 function P2ReplaceRow({ go }) {
   return <P2Row icon="swap_horiz" title="Replace payment QR" subtitle={P2_REPLACE_COPY} onClick={() => go('replace-scan')} />;
 }
-function P2PendingPayeeRow() {
-  return <P2Row icon="hourglass_top" title={P2_NEW_PAYEE.bankName} subtitle={`New QR · ${P2_NEW_PAYEE.vpa} · submitted today`} trailing={<P2Badge tone="amber">In review</P2Badge>} />;
+// A submitted payee before Paigham Admin decides: the QR's own name and UPI ID, never the bank
+// name and never "Verified payee" (TRD D7 needs Cashfree VALID and Admin approval for that).
+function P2PendingPayeeRow({ payee = P2_NEW_PAYEE, prefix = 'New QR · ' }) {
+  return <P2Row icon="hourglass_top" title={payee.payee} subtitle={`${prefix}${payee.vpa} · submitted today`} trailing={<P2Badge tone="amber">In review</P2Badge>} />;
 }
 // The reminder's construction (attention group + action row), reused for a returned replacement:
 // it is work owed, with one action.
@@ -489,7 +491,7 @@ function P2Pending({ go }) {
       <P2AppBar title="Payment setup" back={() => go('console')} />
       <P2Scroll>
         <P2Outcome icon="schedule" title="We’re checking your QR" description="Paigham Admin compares the payee details with your masjid record." />
-        <P2PayeeGroup label="Submitted payee" />
+        <P2Group label="Submitted payee"><P2PendingPayeeRow payee={P2_MASJID} prefix="" /></P2Group>
       </P2Scroll>
       <P2Docked><P2Button kind="btn-tonal" onClick={() => go('console')}>Back to Console</P2Button></P2Docked>
     </P2Screen>
@@ -643,7 +645,7 @@ function P2MasjidDetails({ go, ready = true, requests = P2_REQUESTS, replacement
             {replacement === 'pending' && (
               <P2Group label="New QR · in review">
                 <P2Row title="Status" trailing={<P2Badge tone="amber">In review</P2Badge>} />
-                <P2Row title="Name at bank" value={P2_NEW_PAYEE.bankName} />
+                <P2Row title="Payee name" value={P2_NEW_PAYEE.payee} />
                 <P2Row title="UPI ID" value={P2_NEW_PAYEE.vpa} />
                 <P2Row title="Submitted" value="Today" />
               </P2Group>
@@ -1247,7 +1249,7 @@ function PaymentsV2Experience() {
           <span className="eyebrow accent">Paigham · Payments / Design POC 03</span>
           <h1>Direct giving, without a payment claim</h1>
           <p>Five journeys on one board. A payment request has one type: the amount comes first and the title is optional. News without an ask stays a Paigham. The follower Friday card appears only on Fridays, for a primary masjid that accepts payments.</p>
-          <p>Review fixes, 2 Oct 2026, awaiting approval: frames marked Proposed are new, frames marked Changed alter an approved frame. They cover extensions within 7 days of ending, replacing an active payment QR, a payee that changed before payment, and amount steps that answer on tap.</p>
+          <p>Review fixes, 2 Oct 2026, approved as drawn on 2 Oct 2026: frames marked New were added, frames marked Changed alter an earlier frame. They cover extensions within 7 days of ending, replacing an active payment QR, a payee that changed before payment, and amount steps that answer on tap.</p>
           <div>{['Existing masjid UPI QR', 'Admin-reviewed payee', 'Amount first · title optional', 'No bank status'].map((tag) => <P2Badge key={tag}>{tag}</P2Badge>)}</div>
         </div>
         {P2_ROWS.map((row) => (
@@ -1257,7 +1259,7 @@ function PaymentsV2Experience() {
               {row.frames.map(([id, label, mark]) => (
                 <div key={id} className="poc-board-item p2-frame-pick" role="button" tabIndex={0} aria-label={label} onClick={() => go(id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') go(id); }}>
                   <P2Device stage={id} />
-                  <span className="poc-frame-caption">{label}{mark && <> <P2Badge tone={mark === 'new' ? 'amber' : 'teal'}>{mark === 'new' ? 'Proposed' : 'Changed'}</P2Badge></>}</span>
+                  <span className="poc-frame-caption">{label}{mark && <> <P2Badge tone={mark === 'new' ? 'amber' : 'teal'}>{mark === 'new' ? 'New' : 'Changed'}</P2Badge></>}</span>
                 </div>
               ))}
             </div>
