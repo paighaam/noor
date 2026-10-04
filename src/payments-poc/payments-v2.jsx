@@ -10,7 +10,15 @@
 const P2_MASJIDS = {
   bilal: { key: 'bilal', name: 'Masjid E Bilal', place: 'Bengaluru', code: 'PGM-BLR-1042', photo: '/images/masjid-camera-preview.png', vpa: 'masjidebilal@upi', payee: 'Masjid E Bilal Trust', bankName: 'MASJID E BILAL TRUST' },
   jamia: { key: 'jamia', name: 'Jamia Masjid', place: 'Frazer Town', code: 'PGM-BLR-0217', vpa: 'jamiamasjidft@upi', payee: 'Jamia Masjid Frazer Town Trust', bankName: 'JAMIA MASJID FRAZER TOWN TRUST' },
+  // Accepts UPI but has no live request: Choose a masjid lists it anyway, because the list now
+  // comes from the followed-masjid giving directory (an ACTIVE payee), not from Home's requests.
+  quba: { key: 'quba', name: 'Masjid E Quba', place: 'Shivajinagar', code: 'PGM-BLR-0588', vpa: 'masjidequba@upi', payee: 'Masjid E Quba Committee', bankName: 'MASJID E QUBA COMMITTEE' },
 };
+// A replacement QR the Masjid E Bilal committee submits while its current payee stays ACTIVE.
+// The same row becomes the payee a follower is shown after the server reports PAYEE_CHANGED.
+const P2_NEW_PAYEE = { vpa: 'bilalwaqf@okaxis', payee: 'Masjid E Bilal Waqf Trust', bankName: 'MASJID E BILAL WAQF TRUST' };
+// The reason Paigham Admin gave when it returned the replacement (latestDecision.reviewReason).
+const P2_RETURN_REASON = 'Name at bank does not match the masjid.';
 // The follower's primary masjid. It is the one the admin side of this board sets up, so the
 // Friday card and the masjid console always describe the same payee.
 const P2_MASJID = P2_MASJIDS.bilal;
@@ -24,8 +32,14 @@ const P2_REQUESTS = [
 // Requests that already left followers' screens: one the committee marked as met, one that
 // reached its end date. They stay in the hub so the committee keeps the record.
 const P2_ENDED = [
-  { id: 'iftar', masjid: 'bilal', title: 'Iftar for 200 musalleen', amount: 15000, icon: 'favorite', how: 'met', endedOn: '12 Sep', starts: 38 },
-  { id: 'fans', masjid: 'bilal', title: 'Ceiling fans for the hall', amount: 6000, icon: 'volunteer_activism', how: 'ended', endedOn: '2 Sep', starts: 9 },
+  { id: 'iftar', masjid: 'bilal', title: 'Iftar for 200 musalleen', amount: 15000, icon: 'favorite', how: 'met', endedOn: '12 Sep', endedAgo: 17, starts: 38 },
+  { id: 'fans', masjid: 'bilal', title: 'Ceiling fans for the hall', amount: 6000, icon: 'volunteer_activism', how: 'ended', endedOn: '2 Sep', endedAgo: 27, starts: 9 },
+];
+// Requests that reached their end date in the last week. One can still be extended (TRD §4.5:
+// ended by at most 7 days); the other already used all three extensions.
+const P2_ENDED_RECENT = [
+  { id: 'quran', masjid: 'bilal', title: 'Quran stands', detail: 'New stands for the madrasa class', amount: 3000, icon: 'volunteer_activism', how: 'ended', endedOn: '26 Sep', endedAgo: 3, extendedCount: 0, starts: 9 },
+  { id: 'roof', masjid: 'bilal', title: 'Roof waterproofing', amount: 20000, icon: 'volunteer_activism', how: 'ended', endedOn: '24 Sep', endedAgo: 5, extendedCount: 3, starts: 21 },
 ];
 // Every request ends. Paigham cannot see money arrive, so a request can never close itself on
 // its amount: the committee marks it met, or it ends on its date. 30 days unless they change it.
@@ -33,9 +47,21 @@ const P2_DURATIONS = [['7', '1 week'], ['14', '2 weeks'], ['30', '30 days'], ['6
 const P2_DEFAULT_DURATION = '30';
 const P2_EXTEND_DAYS = 30;
 const P2_REMIND_DAYS = 3;
+// TRD §4.5: an extension is possible from 3 days before the end until 7 days after it, at most
+// 3 times, and never for a request marked met. The server sends `extendable`; these mirror it.
+const P2_MAX_EXTENSIONS = 3;
+const P2_EXTEND_GRACE_DAYS = 7;
+// Amount bounds come from the hub's LimitsDto / the give target at runtime; these are the values
+// the review measured (request ₹1 crore, giving ₹1 lakh).
+const P2_REQUEST_MAX = 10000000;
+const P2_GIVE_MAX = 100000;
 // The POC's "today", so end dates on the board never drift with the real clock.
 const P2_TODAY = new Date(2026, 8, 29);
 const P2_SAMPLE_FORM = { target: '1000', title: 'Repair the water cooler', detail: 'Drinking water before Friday prayers', duration: P2_DEFAULT_DURATION };
+// The draft as the member edited it after a publish whose outcome was unknown (4 Oct frame).
+const P2_EDITED_FORM = { target: '1500', title: 'Repair the water cooler and tank', detail: 'Drinking water before Friday prayers', duration: P2_DEFAULT_DURATION };
+// RATE_LIMITED: the app's title for the code and the server's own message (payments PaymentErrors).
+const P2_RATE_LIMITED = { title: 'Too many attempts', message: 'Too many attempts. Please try again in a few minutes' };
 const P2_STARTS = [
   { amount: 250, note: 'Repair the water cooler', when: 'Today' },
   { amount: 500, note: 'General giving', when: 'Friday' },
@@ -49,20 +75,61 @@ const p2EndingSoon = (request) => request.endsIn <= P2_REMIND_DAYS;
 // Every request the masjid has published in this session, newest first.
 const p2Published = (form, posted) => posted ? [{ id: 'new', masjid: 'bilal', title: form.title, detail: form.detail, amount: form.target, icon: 'volunteer_activism', when: 'Just now', endsIn: Number(form.duration || P2_DEFAULT_DURATION), starts: 0 }, ...P2_REQUESTS] : P2_REQUESTS;
 // Live requests: the ones not marked met, with any extension applied. Followers only ever see these.
-const p2AllRequests = (form, posted, closed = [], extended = []) => p2Published(form, posted)
-  .filter((request) => !closed.includes(request.id))
-  .map((request) => extended.includes(request.id) ? { ...request, endsIn: request.endsIn + P2_EXTEND_DAYS } : request);
-const p2EndedRequests = (form, posted, closed = []) => [
-  ...p2Published(form, posted).filter((request) => closed.includes(request.id)).map((request) => ({ ...request, how: 'met', endedOn: 'Today' })),
+// An extended request that had already ended comes back live for 30 days from today
+// (ends_at = max(ends_at, now) + 30 days).
+const p2AllRequests = (form, posted, closed = [], extended = [], recent = false) => [
+  ...p2Published(form, posted)
+    .filter((request) => !closed.includes(request.id))
+    .map((request) => extended.includes(request.id) ? { ...request, endsIn: request.endsIn + P2_EXTEND_DAYS, extendedCount: (request.extendedCount || 0) + 1 } : request),
+  ...(recent ? P2_ENDED_RECENT : [])
+    .filter((request) => extended.includes(request.id))
+    .map(({ how, endedOn, endedAgo, ...request }) => ({ ...request, when: 'Extended today', endsIn: P2_EXTEND_DAYS, extendedCount: (request.extendedCount || 0) + 1 })),
+];
+const p2EndedRequests = (form, posted, closed = [], extended = [], recent = false) => [
+  ...p2Published(form, posted).filter((request) => closed.includes(request.id)).map((request) => ({ ...request, how: 'met', endedOn: 'Today', endedAgo: 0 })),
+  ...(recent ? P2_ENDED_RECENT : []).filter((request) => !extended.includes(request.id)),
   ...P2_ENDED,
 ];
+// Why a request cannot be extended, or null when it can. Mirrors the server's `extendable`
+// predicate and the reasons its 409 REQUEST_NOT_EXTENDABLE names.
+const p2ExtendBlock = (request) => {
+  if (request.how === 'met') return 'Marked as met';
+  if ((request.extendedCount || 0) >= P2_MAX_EXTENSIONS) return `Extended ${P2_MAX_EXTENSIONS} times — the limit`;
+  if (request.how === 'ended' && request.endedAgo > P2_EXTEND_GRACE_DAYS) return `Ended more than ${P2_EXTEND_GRACE_DAYS} days ago`;
+  if (!request.how && request.endsIn > P2_REMIND_DAYS) return 'Not ending soon';
+  return null;
+};
+const p2ExtendableUntil = (request) => p2EndDate(P2_EXTEND_GRACE_DAYS - request.endedAgo);
+// Field-level amount validation, answered on tap (the Paigham form pattern: the action stays
+// enabled and the field says what is wrong).
+// An amount is whole rupees (TRD §4.2) and the text is read as typed, never cleaned into another
+// number: "250.50" is not ₹25,050. The give field and the request wizard (approved 4 Oct) both
+// name what is wrong: a decimal point and any other non-digit each get their own line.
+const p2AmountError = (value, max, maxCopy) => {
+  const text = String(value || '').trim();
+  if (text.includes('.')) return 'Enter whole rupees, without paise';
+  if (text && !/^\d+$/.test(text)) return 'Enter the amount in digits, like 500';
+  const amount = Number(text);
+  if (!/^\d+$/.test(text) || !(amount >= 1)) return 'Enter an amount of at least ₹1';
+  if (amount > max) return maxCopy;
+  return null;
+};
+// A frame's optional third entry marks a review round. 'new' and 'changed' are the 2 Oct review
+// fixes, approved as drawn by the product owner on 2 Oct 2026: 'new' for a frame they added,
+// 'changed' for an earlier frame they alter. 'approved' is the 4 Oct review corrections, approved
+// by the product owner on 4 Oct 2026. An optional fourth entry is a note shown under the caption
+// (whether the build already does it, or what the frame stands for beyond what it draws).
 const P2_ROWS = [
-  { number: '01', title: 'Masjid · activate payments', icon: 'qr_code_scanner', frames: [['console', 'Console nudge'], ['scan', 'Scan existing QR'], ['review', 'Review payee'], ['pending', 'Awaiting review'], ['ready', 'Payments ready']] },
-  { number: '02', title: 'Paigham Admin · human review', icon: 'shield', frames: [['admin-home', 'Admin Console'], ['admin-queue', 'Payment QR queue'], ['admin-review', 'Review match'], ['admin-approved', 'Approved'], ['admin-returned', 'Returned']] },
-  { number: '03', title: 'Masjid · requests & activity', icon: 'campaign', frames: [['console-ready', 'Console · Payments entry'], ['masjid-details', 'Details · payment record'], ['masjid-payments', 'Payments hub + FAB'], ['request-amount', '1 · Amount needed'], ['request-details', '2 · Title (optional)'], ['request-review', '3 · Review'], ['request-ends', '3 · End date sheet'], ['published', 'Visible to followers'], ['close-confirm', 'Mark as met · confirm'], ['initiations', 'Initiations only']] },
-  { number: '04', title: 'Follower · discover', icon: 'home', frames: [['user-home', 'Friday · primary masjid card'], ['user-home-weekday', 'Weekday · requests carousel'], ['user-home-empty', 'No requests · give to primary'], ['user-home-none', 'No requests · primary not on UPI'], ['user-home-committee', 'Committee · split FAB'], ['updates', 'All requests'], ['choose-masjid', 'Choose a masjid'], ['user-scan', 'Scan masjid QR']] },
-  { number: '05', title: 'Follower · UPI handoff', icon: 'account_balance', frames: [['amount', 'Enter amount'], ['apps', 'Choose UPI app'], ['handoff', 'Open UPI app'], ['android-done', 'Android · reported paid'], ['android-failed', 'Android · not completed'], ['android-unknown', 'Android · no result'], ['ios-return', 'iOS · check UPI app']] },
+  { number: '01', title: 'Masjid · activate payments', icon: 'qr_code_scanner', frames: [['console', 'Console nudge'], ['scan', 'Scan existing QR'], ['review', 'Review payee'], ['pending', 'Awaiting review', 'changed'], ['ready', 'Payments ready', 'changed'], ['console-returned', 'Console · returned with reason', 'approved', 'As built. The reason is the reviewer’s, ended with a full stop.'], ['hub-returned', 'Hub · QR returned', 'approved', 'As built. The console’s own card; no composer while nothing is active.'], ['console-paused', 'Console · paused with reason', 'approved', 'Not built: “Scan a new QR” starts a first-time scan. Decided 4 Oct: a suspended masjid may rescan; the server already accepts a new submission.'], ['hub-paused', 'Hub · payments paused', 'approved', 'Not built: the console card’s “Scan a new QR”. Still no setup promo.']] },
+  { number: '02', title: 'Paigham Admin · human review', icon: 'shield', frames: [['admin-home', 'Admin Console'], ['admin-queue', 'Payment QR queue'], ['admin-review', 'Review match'], ['admin-approved', 'Approved'], ['admin-returned', 'Returned'], ['admin-self-review', 'Error · own masjid’s QR', 'approved', 'As built. Other titles: Already decided · QR not found · Super Admins only · Couldn’t complete that.'], ['admin-suspend', 'Suspend · its own reasons', 'approved', 'Not built. Today Suspend reuses the six return reasons.'], ['admin-suspended-empty', 'Suspended tab · empty', 'approved', 'Not built. Today: “A suspended payee stays here until it is reviewed again.”'], ['admin-replacement', 'Review · replacement', 'approved', 'Not built. Needs a server field `replaces` on the review row.'], ['admin-replace-confirm', 'Replacement · confirm', 'approved', 'Not built. Replaces “Approve this UPI ID?” for a replacement.']] },
+  { number: '03', title: 'Masjid · requests & activity', icon: 'campaign', frames: [['console-ready', 'Console · Payments entry'], ['masjid-details', 'Details · payment record', 'changed'], ['masjid-payments', 'Payments hub + FAB'], ['request-amount', '1 · Amount needed', 'changed'], ['request-amount-invalid', '1 · Amount · invalid on tap', 'new'], ['request-amount-paise-fix', '1 · Amount · paise, aligned', 'approved', 'Not built. The give field’s two lines; “5,000” reads “Enter the amount in digits, like 500”. Replaces the as-built minimum line.'], ['request-details', '2 · Title (optional)'], ['request-review', '3 · Review'], ['request-ends', '3 · End date sheet'], ['published', 'Visible to followers'], ['published-unknown', 'Publish · went live as first sent', 'approved', 'As built. The first send’s outcome was unknown and the draft was edited before the retry.'], ['close-confirm', 'Mark as met · confirm'], ['hub-extend', 'Ended · extend within 7 days', 'new'], ['hub-ended-list', 'Ended · why Extend is unavailable', 'new'], ['reminder-cap', 'Ending soon · extension limit', 'new'], ['initiations', 'Initiations only']] },
+  { number: '04', title: 'Follower · discover', icon: 'home', frames: [['user-home', 'Friday · primary masjid card'], ['user-home-weekday', 'Weekday · requests carousel'], ['user-home-empty', 'No requests · give to primary'], ['user-home-none', 'No requests · primary not on UPI'], ['user-home-committee', 'Committee · split FAB'], ['updates', 'All requests'], ['choose-masjid', 'Choose a masjid', 'changed'], ['user-scan', 'Scan masjid QR']] },
+  { number: '05', title: 'Follower · UPI handoff', icon: 'account_balance', frames: [['amount', 'Enter amount', 'changed'], ['amount-invalid', 'Amount · invalid on tap', 'new'], ['amount-paise', 'Amount · paise entered', 'approved', 'As built.'], ['amount-not-digits', 'Amount · not digits', 'approved', 'As built.'], ['amount-rate-limited', 'Error · too many attempts', 'approved', 'As built: the server’s message under the app’s title. Fallbacks: Something went wrong · No longer available.'], ['apps', 'Choose UPI app'], ['amount-preparing', 'Preparing the hand-off', 'new'], ['amount-changed', 'Payee changed · confirm', 'new'], ['handoff', 'Open UPI app'], ['android-done', 'Android · reported paid'], ['android-failed', 'Android · not completed'], ['android-unknown', 'Android · no result'], ['ios-return', 'iOS · check UPI app']] },
+  { number: '06', title: 'Masjid · replace payment QR', icon: 'swap_horiz', frames: [['replace-scan', 'Scan the new QR', 'new'], ['replace-review', 'Review · replacement', 'new'], ['replace-pending', 'Payments on · new QR in review', 'new'], ['console-replacing', 'Console · new QR in review', 'new'], ['details-replacing', 'Details · active + in review', 'new'], ['hub-replacing', 'Hub · in review, publishing on', 'new'], ['hub-replace-returned', 'Hub · new QR returned', 'new'], ['console-replace-returned', 'Console · new QR returned', 'new']] },
 ];
+// Board frames that show a replacement state; the live device reads the same state from go().
+const P2_STAGE_REPLACEMENT = { 'replace-pending': 'pending', 'console-replacing': 'pending', 'details-replacing': 'pending', 'hub-replacing': 'pending', 'hub-replace-returned': 'returned', 'console-replace-returned': 'returned' };
+const P2_RECENT_ENDED_STAGES = ['hub-extend', 'hub-ended-list'];
 const P2_NOOP = () => {};
 const P2_UPI_APPS = ['Google Pay', 'PhonePe', 'BHIM'];
 const P2_REQUEST_STEPS = 3;
@@ -72,8 +139,10 @@ const P2_REQUEST_STEPS = 3;
 
 function P2Icon({ name, className = '' }) { return <span className={`mi ${className}`} data-i={name} aria-hidden="true" />; }
 
-function P2Button({ children, onClick = P2_NOOP, icon, kind = 'btn-filled', disabled = false }) {
-  return <button type="button" className={`btn lg ${kind}`} onClick={onClick} disabled={disabled}>{icon && <P2Icon name={icon} />}{children}</button>;
+// `busy` is the kit's in-flight button: inert (disabled) with aria-busy, keeping its label while
+// the status capsule above the docked bar says what is running.
+function P2Button({ children, onClick = P2_NOOP, icon, kind = 'btn-filled', disabled = false, busy = false }) {
+  return <button type="button" className={`btn lg ${kind}`} onClick={onClick} disabled={disabled || busy} aria-busy={busy ? 'true' : undefined}>{icon && <P2Icon name={icon} />}{children}</button>;
 }
 
 // The Masjid Console's app bar (OpsAppBar / CmpStepBar): floating `.app-bar`, `.ib` back,
@@ -99,11 +168,28 @@ function P2AppBar({ title, subtitle, back = P2_NOOP, step }) {
 }
 
 function P2Screen({ children }) { return <main className="p2-screen">{children}</main>; }
-function P2Scroll({ children, bar = true, step = false, nav = false, fab = false, onScroll }) {
-  return <div className={`p2-scroll ${bar ? 'under-bar' : ''} ${step ? 'under-step' : ''} ${nav ? 'over-nav' : ''} ${fab ? 'under-fab' : ''}`} onScroll={onScroll}>{children}</div>;
+// `anchor` opens the screen scrolled to a `data-anchor` section, so a board frame can show a
+// part of a long screen that sits below the fold. It is board framing, not a product behaviour.
+function P2Scroll({ children, bar = true, step = false, nav = false, fab = false, onScroll, anchor }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const el = ref.current;
+    const target = anchor && el && el.querySelector(`[data-anchor="${anchor}"]`);
+    if (target) el.scrollTop = target.offsetTop - (bar ? 126 : 54) - 8;
+  }, [anchor]);
+  return <div ref={ref} className={`p2-scroll ${bar ? 'under-bar' : ''} ${step ? 'under-step' : ''} ${nav ? 'over-nav' : ''} ${fab ? 'under-fab' : ''} ${anchor ? 'is-anchored' : ''}`} onScroll={onScroll}>{children}</div>;
 }
-function P2Docked({ children, note }) {
-  return <div className="docked-action bordered">{note && <div className="docked-action-note">{note}</div>}{children}</div>;
+// `status` is the kit's submit progress: a `.status-capsule` floating above the bar inside a
+// `.docked-host`, replacing the helper note rather than stacking with it.
+function P2Docked({ children, note, status }) {
+  const bar = <div className="docked-action bordered">{note && !status && <div className="docked-action-note">{note}</div>}{children}</div>;
+  if (!status) return bar;
+  return (
+    <div className="docked-host">
+      <div className="docked-status status-capsule" role="status" aria-live="polite"><span className="status-capsule-ring" aria-hidden="true" /><b>{status}</b></div>
+      {bar}
+    </div>
+  );
 }
 
 function P2Heading({ eyebrow, title, lead }) {
@@ -117,9 +203,9 @@ function P2Heading({ eyebrow, title, lead }) {
 }
 
 // A section heading inside a screen: `.section-title` plus a hint or a link-style action.
-function P2Section({ title, hint, action }) {
+function P2Section({ title, hint, action, anchor }) {
   return (
-    <div className="p2-section-head">
+    <div className="p2-section-head" data-anchor={anchor}>
       <span className="section-title">{title}</span>
       {action ? <button type="button" className="btn btn-link" onClick={action.onClick}>{action.text}</button> : hint ? <small>{hint}</small> : null}
     </div>
@@ -154,8 +240,8 @@ function P2Row({ icon, lead, title, subtitle, value, trailing, onClick }) {
     </Root>
   );
 }
-function P2Group({ children, attention = false, label }) {
-  return <>{label && <div className="eyebrow p2-group-label">{label}</div>}<div className={`list-group ${attention ? 'attention' : ''}`}>{children}</div></>;
+function P2Group({ children, attention = false, label, anchor }) {
+  return <>{label && <div className="eyebrow p2-group-label" data-anchor={anchor}>{label}</div>}<div className={`list-group ${attention ? 'attention' : ''}`}>{children}</div></>;
 }
 
 function P2Identity({ masjid = P2_MASJID }) {
@@ -185,18 +271,22 @@ function P2Outcome({ icon, tone, title, description }) {
 
 // Amount entry: the kit `.input` with a rupee prefix, and `.chip` shortcuts (`.solid` is the
 // kit's selected chip). PROPOSAL `.amount-field` would give this a display-size figure.
-function P2AmountField({ label, value, onChange, presets }) {
+// An `error` follows the Paigham form pattern (personal details, masjid registration): the
+// kit `.input.error` frame plus a `.helper.err` line directly under the field, announced as an
+// alert. `disabled` holds the field still while a hand-off is being prepared.
+function P2AmountField({ label, value, onChange, presets, error = null, disabled = false }) {
   return (
     <div className="field">
       <div className="flabel">{label}</div>
-      <div className="input focused">
+      <div className={`input ${error ? 'error' : 'focused'} ${disabled ? 'disabled' : ''}`}>
         <div className="inner">
           <span className="p2-rupee" aria-hidden="true">₹</span>
-          <input className="val" aria-label={`${label} in rupees`} type="number" inputMode="numeric" min="1" placeholder="0" value={value} onChange={(event) => onChange(event.target.value)} />
+          <input className="val" aria-label={`${label} in rupees`} aria-invalid={error ? 'true' : undefined} type="text" inputMode="numeric" placeholder="0" value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} />
         </div>
       </div>
+      {error && <div className="helper err" role="alert">{error}</div>}
       <div className="p2-chips">
-        {presets.map((preset) => <button type="button" key={preset} className={`chip ${value === preset ? 'solid' : 'outline'}`} onClick={() => onChange(preset)}>{p2Rupees(preset)}</button>)}
+        {presets.map((preset) => <button type="button" key={preset} className={`chip ${value === preset ? 'solid' : 'outline'}`} disabled={disabled} onClick={() => onChange(preset)}>{p2Rupees(preset)}</button>)}
       </div>
     </div>
   );
@@ -227,16 +317,43 @@ function P2RequestCard({ request, onGive }) {
 // illustration. Used twice here (the console's payment setup nudge and the follower's Friday
 // card); PromptCard has no illustration slot. Kept local until approved.
 function P2Promo({ eyebrow, title, copy, action, art, onClick }) {
-  return (
-    <button type="button" className="p2-promo" onClick={onClick}>
+  const body = (
+    <>
       <span>
         <span className="eyebrow accent">{eyebrow}</span>
         <strong>{title}</strong>
         <small>{copy}</small>
-        <b>{action}<P2Icon name="arrow_forward" /></b>
+        {action && <b>{action}<P2Icon name="arrow_forward" /></b>}
       </span>
       <img src={art} alt="" />
-    </button>
+    </>
+  );
+  return <button type="button" className="p2-promo" onClick={onClick}>{body}</button>;
+}
+
+// ── First payee returned or suspended (4 Oct frames, approved 4 Oct) ──
+// With no active payee the console and the hub draw the same card (app ConsolePaymentsCard
+// Returned / Paused): the reviewer's reason as a sentence first, then the way forward. Both lead to
+// the first-time scan: a suspended masjid may submit a new QR (decided 4 Oct). A reason
+// gets a full stop when it has no closing punctuation, so the wire value "Name does not match"
+// reads "Name does not match.".
+const P2_FIRST_RETURN_REASON = 'Name does not match';
+const P2_SUSPEND_REASON = "QR is not the masjid's";
+const p2ReasonSentence = (reason) => { const text = (reason || '').trim(); return !text ? '' : /[.!?]$/.test(text) ? text : `${text}.`; };
+function P2PayeeStatusCard({ go, state }) {
+  if (state === 'paused') return <P2Promo eyebrow="UPI payments" title="Payments are paused" copy={`${p2ReasonSentence(P2_SUSPEND_REASON)} Paigham has paused UPI payments for your masjid.`} action="Scan a new QR" art="./assets/masjid-payment-setup.png" onClick={() => go('scan')} />;
+  return <P2Promo eyebrow="UPI payments" title="Your QR was returned" copy={`${p2ReasonSentence(P2_FIRST_RETURN_REASON)} Scan your masjid’s payment QR again to resubmit it.`} action="Scan again" art="./assets/masjid-payment-setup.png" onClick={() => go('scan')} />;
+}
+// The hub with nothing active: the card stands in for the composer, and there is no FAB and no
+// live-request or activity section, because nothing can be published.
+function P2HubStatus({ go, state }) {
+  return (
+    <P2Screen>
+      <P2AppBar title="Payments" subtitle={P2_MASJID.name} back={() => go(state === 'paused' ? 'console-paused' : 'console-returned')} />
+      <P2Scroll>
+        <P2PayeeStatusCard go={go} state={state} />
+      </P2Scroll>
+    </P2Screen>
   );
 }
 
@@ -244,13 +361,14 @@ function P2Promo({ eyebrow, title, copy, action, art, onClick }) {
 // explicit actions — a filled primary for the job and a tonal secondary into the section.
 // Two buttons rather than a pressable card with a button inside it: a nested target is
 // invalid markup, and copy that is secretly a link is a target nobody finds.
-function P2SnapshotCard({ eyebrow, title, copy, art, primary, secondary }) {
+function P2SnapshotCard({ eyebrow, title, copy, art, primary, secondary, status }) {
   return (
     <section className="p2-promo is-snapshot">
       <div className="p2-promo-copy">
         <span className="eyebrow accent">{eyebrow}</span>
         <strong>{title}</strong>
         <small>{copy}</small>
+        {status}
       </div>
       <img src={art} alt="" />
       <div className="p2-promo-actions">
@@ -262,12 +380,42 @@ function P2SnapshotCard({ eyebrow, title, copy, art, primary, secondary }) {
 }
 
 // Once payments are on, the setup nudge's slot becomes the console's window into payments.
-function P2PaymentsSnapshot({ go, requests }) {
+// A replacement QR never changes the card's state: the masjid is still accepting UPI through its
+// active payee, so the card keeps New request and only adds the replacement's status (console
+// `payments.replacement`). The reason and Scan again live in the hub, one tap away.
+function P2PaymentsSnapshot({ go, requests, replacement = 'none' }) {
   const own = requests.filter((request) => request.masjid === 'bilal');
   const soon = own.filter(p2EndingSoon).length;
   const latest = P2_STARTS[0];
   const copy = soon ? `${soon} ending in ${P2_REMIND_DAYS} days · 12 payment starts this month` : `12 payment starts this month · latest ${p2Rupees(latest.amount)} ${latest.when.toLowerCase()}`;
-  return <P2SnapshotCard eyebrow="Payments · accepting UPI" title={`${own.length} live ${own.length === 1 ? 'request' : 'requests'}`} copy={copy} art="./assets/masjid-payment-setup.png" primary={{ text: 'New request', icon: 'add', onClick: () => go('request-amount') }} secondary={{ text: 'View payments', onClick: () => go('masjid-payments') }} />;
+  const status = replacement === 'pending' ? <P2Badge tone="amber">New QR in review</P2Badge> : replacement === 'returned' ? <P2Badge tone="amber">New QR returned</P2Badge> : null;
+  return <P2SnapshotCard eyebrow="Payments · accepting UPI" title={`${own.length} live ${own.length === 1 ? 'request' : 'requests'}`} copy={copy} status={status} art="./assets/masjid-payment-setup.png" primary={{ text: 'New request', icon: 'add', onClick: () => go('request-amount') }} secondary={{ text: 'View payments', onClick: () => go(replacement === 'none' ? 'masjid-payments' : replacement === 'pending' ? 'hub-replacing' : 'hub-replace-returned') }} />;
+}
+
+// ── Payee replacement (F7) ─────────────────────────────────────────────
+// The ACTIVE payee and a replacement are two different rows (hub `payee` / `pendingPayee` /
+// `latestDecision`). Every surface shows the active one first and the replacement separately;
+// nothing about a replacement stops requests, because publishing needs only the active payee.
+const P2_REPLACE_COPY = 'The current payee stays active until Paigham Admin approves the new one';
+function P2ReplaceRow({ go }) {
+  return <P2Row icon="swap_horiz" title="Replace payment QR" subtitle={P2_REPLACE_COPY} onClick={() => go('replace-scan')} />;
+}
+// A submitted payee before Paigham Admin decides: the QR's own name and UPI ID, never the bank
+// name and never "Verified payee" (TRD D7 needs Cashfree VALID and Admin approval for that).
+function P2PendingPayeeRow({ payee = P2_NEW_PAYEE, prefix = 'New QR · ' }) {
+  return <P2Row icon="hourglass_top" title={payee.payee} subtitle={`${prefix}${payee.vpa} · submitted today`} trailing={<P2Badge tone="amber">In review</P2Badge>} />;
+}
+// The reminder's construction (attention group + action row), reused for a returned replacement:
+// it is work owed, with one action.
+function P2ReturnedCard({ go }) {
+  return (
+    <div className="list-group attention p2-reminder">
+      <P2Row icon="reply" title="New payment QR returned" subtitle={`${P2_RETURN_REASON} Current payee still active.`} />
+      <div className="p2-reminder-actions single">
+        <button type="button" className="btn btn-tonal sm" onClick={() => go('replace-scan')}><P2Icon name="qr_code_scanner" />Scan again</button>
+      </div>
+    </div>
+  );
 }
 function P2PaymentQrSnapshot({ go }) {
   return <P2SnapshotCard eyebrow="Payment QRs · needs review" title="1 QR to review" copy={`${P2_MASJID.name} submitted today · 3 approved this month`} art="./assets/masjid-payment-setup.png" primary={{ text: 'Review next', onClick: () => go('admin-review') }} secondary={{ text: 'View queue', onClick: () => go('admin-queue') }} />;
@@ -296,7 +444,9 @@ function P2PaighamComposer() {
 // Stand-in for the real ConsoleScreen (masjid-operations/storyboards/broadcast-studio-screens.jsx):
 // its header, a pointer to the composer, and the kit `.deck` the console itself is built from.
 // PROPOSAL: render the real ConsoleScreen here once ConsoleHome takes a `payments` tile.
-function P2Console({ go, ready = false, requests = P2_REQUESTS }) {
+// `payeeCard` ('returned' | 'paused') is a first payee that was returned or suspended: the card
+// takes the setup nudge's slot, so the nudge never offers setup to a paused masjid.
+function P2Console({ go, ready = false, requests = P2_REQUESTS, replacement = 'none', payeeCard = null }) {
   return (
     <P2Screen>
       <P2Scroll bar={false}>
@@ -307,8 +457,9 @@ function P2Console({ go, ready = false, requests = P2_REQUESTS }) {
           <P2Icon name="verified" className="p2-verified" />
         </header>
         <P2PaighamComposer />
-        {ready ? <P2PaymentsSnapshot go={go} requests={requests} /> : null}
-        {!ready && <P2Promo eyebrow="New for your masjid" title="Accept UPI payments" copy="Use the QR already at your masjid" action="Get started" art="./assets/masjid-payment-setup.png" onClick={() => go('scan')} />}
+        {ready ? <P2PaymentsSnapshot go={go} requests={requests} replacement={replacement} /> : null}
+        {payeeCard && <P2PayeeStatusCard go={go} state={payeeCard} />}
+        {!ready && !payeeCard && <P2Promo eyebrow="New for your masjid" title="Accept UPI payments" copy="Use the QR already at your masjid" action="Get started" art="./assets/masjid-payment-setup.png" onClick={() => go('scan')} />}
         <P2Section title="Operations" hint="Run the masjid" />
         <div className="deck">
           <button type="button" className="deck-tile jade"><span className="deck-tile-value">1:30PM</span><strong>Salaah</strong><small>Next Zohar · iqama +15m</small></button>
@@ -346,21 +497,32 @@ function P2Scan({ title, hint, action, onBack, onScan }) {
   );
 }
 
-function P2Review({ go }) {
+// `replacing` is the same Review stage reached from an ACTIVE payee: the new QR is listed apart
+// from the payee followers pay today, and the copy says the active one stays until approval.
+function P2Review({ go, replacing = false }) {
+  const scan = replacing ? 'replace-scan' : 'scan';
+  const found = replacing ? P2_NEW_PAYEE : P2_MASJID;
   return (
     <P2Screen>
-      <P2AppBar title="Check QR details" back={() => go('scan')} />
+      <P2AppBar title={replacing ? 'Replace payment QR' : 'Check QR details'} back={() => go(scan)} />
       <P2Scroll>
-        <P2Heading eyebrow="Found on your QR" title="Is this your masjid’s payment QR?" />
-        <P2Group>
-          <P2Row title="Payee name" value={P2_MASJID.payee} />
-          <P2Row title="UPI ID" value={P2_MASJID.vpa} />
+        <P2Heading eyebrow={replacing ? 'Found on the new QR' : 'Found on your QR'} title={replacing ? 'Use this QR instead?' : 'Is this your masjid’s payment QR?'} />
+        <P2Group label={replacing ? 'New QR' : undefined}>
+          <P2Row title="Payee name" value={found.payee} />
+          <P2Row title="UPI ID" value={found.vpa} />
         </P2Group>
-        <P2Note>Paigham checks this UPI ID with the bank, then a Paigham admin reviews it before payments are enabled.</P2Note>
+        {replacing && (
+          <P2Group label="Active until approved">
+            <P2Row icon="verified" title={P2_MASJID.bankName} subtitle={`${P2_MASJID.vpa} · followers pay this payee now`} />
+          </P2Group>
+        )}
+        <P2Note>{replacing
+          ? 'Paigham checks the new UPI ID with the bank, then a Paigham admin reviews it. Your current payee stays active until the admin approves the new one, and your requests stay open.'
+          : 'Paigham checks this UPI ID with the bank, then a Paigham admin reviews it before payments are enabled.'}</P2Note>
       </P2Scroll>
       <P2Docked>
-        <P2Button onClick={() => go('pending')}>Submit for review</P2Button>
-        <P2Button kind="btn-tonal" onClick={() => go('scan')}>Scan a different QR</P2Button>
+        <P2Button onClick={() => go(replacing ? 'replace-pending' : 'pending')}>Submit for review</P2Button>
+        <P2Button kind="btn-tonal" onClick={() => go(scan)}>Scan a different QR</P2Button>
       </P2Docked>
     </P2Screen>
   );
@@ -372,22 +534,40 @@ function P2Pending({ go }) {
       <P2AppBar title="Payment setup" back={() => go('console')} />
       <P2Scroll>
         <P2Outcome icon="schedule" title="We’re checking your QR" description="Paigham Admin compares the payee details with your masjid record." />
-        <P2PayeeGroup label="Submitted payee" />
+        <P2Group label="Submitted payee"><P2PendingPayeeRow payee={P2_MASJID} prefix="" /></P2Group>
       </P2Scroll>
       <P2Docked><P2Button kind="btn-tonal" onClick={() => go('console')}>Back to Console</P2Button></P2Docked>
     </P2Screen>
   );
 }
 
-function P2Ready({ go }) {
+// Setup reached with an ACTIVE payee. It used to offer only Open payments, so a replacement
+// could not be started (F7); it now offers Replace payment QR, and doubles as the Submitted
+// stage of a replacement: the active payee first, the replacement under its own label.
+function P2Ready({ go, replacement = 'none' }) {
+  const description = replacement === 'pending'
+    ? 'Followers keep paying your active payee while Paigham Admin reviews the new QR.'
+    : replacement === 'returned'
+      ? 'Followers keep paying your active payee. The new QR was returned.'
+      : 'Followers see your verified payee details before they open a UPI app.';
   return (
     <P2Screen>
-      <P2AppBar title="Payment setup" back={() => go('console')} />
+      <P2AppBar title="Payment setup" back={() => go(replacement === 'none' ? 'console' : 'console-ready')} />
       <P2Scroll>
-        <P2Outcome icon="verified" tone="success" title="Payments are on" description="Followers see your verified payee details before they open a UPI app." />
-        <P2PayeeGroup />
+        <P2Outcome icon="verified" tone="success" title="Payments are on" description={description} />
+        {replacement === 'returned' && <P2ReturnedCard go={go} />}
+        <P2PayeeGroup label={replacement === 'none' ? 'Pays to' : 'Active payee'} />
+        {replacement === 'pending' && (
+          <>
+            <P2Group label="Awaiting review"><P2PendingPayeeRow /></P2Group>
+            <P2Note>Your requests stay open. Followers pay the active payee until the new one is approved.</P2Note>
+          </>
+        )}
       </P2Scroll>
-      <P2Docked><P2Button onClick={() => go('masjid-payments')}>Open payments</P2Button></P2Docked>
+      <P2Docked>
+        <P2Button onClick={() => go('masjid-payments')}>Open payments</P2Button>
+        {replacement === 'none' && <P2Button kind="btn-tonal" icon="swap_horiz" onClick={() => go('replace-scan')}>Replace payment QR</P2Button>}
+      </P2Docked>
     </P2Screen>
   );
 }
@@ -435,28 +615,102 @@ function P2AdminQueue({ go }) {
   );
 }
 
-function P2AdminReview({ go }) {
+// `mode` adds the 4 Oct frames (approved 4 Oct) on the same screen (the approved frame is mode 'pending'):
+// 'self' — as built: a Super Admin on the masjid's own committee presses Approve and the server
+//   refuses with SELF_REVIEW_NOT_ALLOWED; the admin app reads the code as a title.
+// 'active' — an approved payee: the bar offers Suspend only (as built), here with the
+//   approved suspend sheet over it.
+// 'replacement' / 'confirm' — approved 4 Oct, not built: a submission that replaces an active payee
+//   says so, lists the current payee first, and confirms in its own words. Needs a server field
+//   `replaces` on the review row; today the admin cannot tell a replacement from a first QR.
+const P2_SUSPEND_REASONS = ['Payments reported as misdirected', 'UPI ID closed or changed', 'Committee asked to pause', 'Under investigation', 'Other'];
+function P2AdminReview({ go, mode = 'pending' }) {
+  const { Dialog } = window;
+  const replacing = mode === 'replacement' || mode === 'confirm';
+  const payee = replacing ? P2_NEW_PAYEE : P2_MASJID;
+  const [reason, setReason] = React.useState(P2_SUSPEND_REASONS[0]);
   return (
     <P2Screen>
       <P2AppBar title="Review payment QR" subtitle={P2_MASJID.name} back={() => go('admin-queue')} />
       <P2Scroll>
-        <P2Heading eyebrow="QR submission" title="Do these details match?" />
+        {replacing && <div><P2Badge tone="amber"><P2Icon name="swap_horiz" />Replacement</P2Badge></div>}
+        <P2Heading eyebrow={mode === 'active' ? 'Approved payee' : 'QR submission'} title={mode === 'active' ? 'Pays followers today' : 'Do these details match?'} />
         <P2Group label="Masjid record">
           <P2Row title="Masjid" value={P2_MASJID.name} />
           <P2Row title="City" value={P2_MASJID.place} />
         </P2Group>
+        {replacing && (
+          <P2Group label="Current payee">
+            <P2Row title="Name at bank" value={P2_MASJID.bankName} />
+            <P2Row title="UPI ID" value={P2_MASJID.vpa} />
+            <P2Row title="Approved" value="20 Sep 2026" />
+          </P2Group>
+        )}
         <P2Group label="QR payee">
-          <P2Row title="Name on QR" value={P2_MASJID.payee} />
-          <P2Row title="UPI ID" value={P2_MASJID.vpa} />
-          <P2Row title="Name at bank" value={P2_MASJID.bankName} />
+          <P2Row title="Name on QR" value={payee.payee} />
+          <P2Row title="UPI ID" value={payee.vpa} />
+          <P2Row title="Name at bank" value={payee.bankName} />
           <P2Row title="UPI ID check" trailing={<P2Badge tone="jade">Valid</P2Badge>} />
         </P2Group>
-        <P2Note icon="shield">Compare the masjid record with the name the bank holds for this UPI ID. Approve is only available once the UPI ID check is valid.</P2Note>
+        {mode !== 'active' && <P2Note icon="shield">Compare the masjid record with the name the bank holds for this UPI ID. Approve is only available once the UPI ID check is valid.</P2Note>}
       </P2Scroll>
-      <P2Docked>
-        <P2Button onClick={() => go('admin-approved')}>Approve QR</P2Button>
-        <P2Button kind="btn-tonal" onClick={() => go('admin-returned')}>Return for correction</P2Button>
-      </P2Docked>
+      {mode === 'active' ? (
+        <P2Docked note="Suspending hides this masjid’s payment requests from followers">
+          <P2Button kind="btn-tonal destructive">Suspend</P2Button>
+        </P2Docked>
+      ) : (
+        <P2Docked>
+          <P2Button onClick={() => go(replacing ? 'admin-replace-confirm' : mode === 'self' ? 'admin-self-review' : 'admin-approved')}>Approve QR</P2Button>
+          <P2Button kind="btn-tonal" onClick={() => go('admin-returned')}>Return for correction</P2Button>
+        </P2Docked>
+      )}
+      {Dialog && mode === 'self' && (
+        <Dialog isOpen mode="sheet" onClose={() => go('admin-review')} title="You can’t approve this QR" description="You are on this masjid’s committee, so another Super Admin must approve it." primary={null} secondary={{ text: 'Dismiss', onClick: () => go('admin-review') }} />
+      )}
+      {Dialog && mode === 'active' && (
+        // Approved 4 Oct, not built: suspend reasons of its own. The construction is the admin app's reason sheet
+        // (the kit's option rows inside a Dialog sheet, actions under the list); `.adm-reject` is
+        // page-local to the admin board, so its layout is restated as `.p2-reason-sheet`.
+        <Dialog
+          isOpen
+          mode="sheet"
+          className="opt-sheet p2-reason-sheet"
+          onClose={() => go('admin-review')}
+          title="Why is it being suspended?"
+          description="Followers stop seeing this masjid’s payment requests. Payments resume only after the committee submits a QR and a Super Admin approves it."
+          destructive
+          primary={{ text: 'Suspend', onClick: () => go('admin-queue') }}
+          secondary={{ text: 'Cancel', onClick: () => go('admin-review') }}
+        >
+          <div className="opt-list" role="listbox" aria-label="Suspend reason">
+            {P2_SUSPEND_REASONS.map((option) => (
+              <button key={option} type="button" role="option" aria-selected={option === reason} className={`opt-row ${option === reason ? 'selected' : ''}`} onClick={() => setReason(option)}>
+                <span>{option}</span>
+                <span className="opt-row-mark"><span className="mi" data-i={option === reason ? 'radio_button_checked' : 'radio_button_unchecked'} aria-hidden="true" /></span>
+              </button>
+            ))}
+          </div>
+        </Dialog>
+      )}
+      {Dialog && mode === 'confirm' && (
+        <Dialog isOpen onClose={() => go('admin-replacement')} title="Replace the current UPI ID?" description={`${P2_MASJID.name}’s payment requests will send followers to ${P2_NEW_PAYEE.vpa} instead of ${P2_MASJID.vpa}. The committee gets a notification.`} primary={{ text: 'Replace', onClick: () => go('admin-approved') }} secondary={{ text: 'Not yet', onClick: () => go('admin-replacement') }} />
+      )}
+    </P2Screen>
+  );
+}
+
+// Approved 4 Oct, not built: the Suspended tab's empty line. As built it reads "A suspended payee
+// stays here until it is reviewed again." The tabs are the admin app's (kit `.tbar`).
+function P2AdminSuspendedEmpty({ go }) {
+  return (
+    <P2Screen>
+      <P2AppBar title="Payment QRs" subtitle="Operations" back={() => go('admin-home')} />
+      <P2Scroll>
+        <div className="tbar" role="tablist">
+          {['Pending', 'Approved', 'Returned', 'Suspended'].map((tab) => <span key={tab} role="tab" aria-selected={tab === 'Suspended'} className={`tab ${tab === 'Suspended' ? 'active' : ''}`}>{tab}</span>)}
+        </div>
+        <P2Outcome icon="pause" title="Nothing suspended" description="A suspended payee stays suspended until the committee submits a QR for review." />
+      </P2Scroll>
     </P2Screen>
   );
 }
@@ -478,12 +732,12 @@ function P2AdminDecision({ go, approved }) {
 // Follows the Console's DetailsBody: `.media-identity-hero`, then eyebrow-labelled groups.
 // DetailsBody's `.detail-field` is page-local to the Masjid Console, so rows here are kit
 // `.list-item` label/value pairs (PROPOSAL: promote `.detail-field` to the kit).
-function P2MasjidDetails({ go, ready = true, requests = P2_REQUESTS }) {
+function P2MasjidDetails({ go, ready = true, requests = P2_REQUESTS, replacement = 'none', anchor }) {
   const live = requests.filter((request) => request.masjid === 'bilal').length;
   return (
     <P2Screen>
       <P2AppBar title="Masjid details" subtitle={P2_MASJID.name} back={() => go(ready ? 'console-ready' : 'console')} />
-      <P2Scroll>
+      <P2Scroll anchor={anchor}>
         <div className="media-identity-hero p2-bleed">
           <img src={P2_MASJID.photo} alt={`${P2_MASJID.name} entrance`} />
           <div className="media-identity-hero-copy">
@@ -497,14 +751,26 @@ function P2MasjidDetails({ go, ready = true, requests = P2_REQUESTS }) {
         </P2Group>
         {ready ? (
           <>
-            <P2Group label="Payments">
+            <P2Group label="Payments" anchor="payments">
               <P2Row title="Status" trailing={<P2Badge tone="jade">Accepting</P2Badge>} />
               <P2Row title="Name at bank" value={P2_MASJID.bankName} />
               <P2Row title="UPI ID" value={P2_MASJID.vpa} />
               <P2Row title="Reviewed" value="20 Sep 2026" />
-              <P2Row icon="volunteer_activism" title="Payment requests" subtitle={`${live} live · requests and activity`} onClick={() => go('masjid-payments')} />
+              {replacement === 'none' && <P2ReplaceRow go={go} />}
+              <P2Row icon="volunteer_activism" title="Payment requests" subtitle={`${live} live · requests and activity`} onClick={() => go(replacement === 'none' ? 'masjid-payments' : replacement === 'pending' ? 'hub-replacing' : 'hub-replace-returned')} />
             </P2Group>
-            <P2Note icon="verified">Shown to followers before they open a UPI app. Replacing the payee needs a new QR review.</P2Note>
+            {replacement === 'pending' && (
+              <P2Group label="New QR · in review">
+                <P2Row title="Status" trailing={<P2Badge tone="amber">In review</P2Badge>} />
+                <P2Row title="Payee name" value={P2_NEW_PAYEE.payee} />
+                <P2Row title="UPI ID" value={P2_NEW_PAYEE.vpa} />
+                <P2Row title="Submitted" value="Today" />
+              </P2Group>
+            )}
+            {replacement === 'returned' && <P2ReturnedCard go={go} />}
+            <P2Note icon="verified">{replacement === 'pending'
+              ? `Followers keep paying ${P2_MASJID.bankName} until Paigham Admin approves the new QR.`
+              : 'Shown to followers before they open a UPI app. Replacing the payee needs a new QR review.'}</P2Note>
           </>
         ) : (
           <P2Group label="Payments">
@@ -540,24 +806,47 @@ function P2RequestComposer({ go, form, setForm }) {
 
 // Payments hub: the top of the screen is the ask, the bottom is what followers did with it.
 // The `.fab` keeps "New request" reachable once the highlight scrolls away.
-function P2MasjidPayments({ go, form, setForm, requests = P2_REQUESTS, ended = P2_ENDED, onClose = P2_NOOP, onExtend = P2_NOOP, confirmInitial = null }) {
+// Extensions (F6): Extend shows only where the server would accept it — an open request ending
+// within 3 days, or one that ended at most 7 days ago — and never past 3 extensions or for a met
+// request. Where it is not available the row says why rather than offering a refused action.
+function P2MasjidPayments({ go, form, setForm, requests = P2_REQUESTS, ended = P2_ENDED, onClose = P2_NOOP, onExtend = P2_NOOP, confirmInitial = null, replacement = 'none', anchor }) {
   const { Dialog } = window;
   const own = requests.filter((request) => request.masjid === 'bilal');
   const soon = own.find(p2EndingSoon);
+  const soonBlock = soon ? p2ExtendBlock(soon) : null;
+  const reopen = ended.find((request) => request.how === 'ended' && !p2ExtendBlock(request));
+  // An ended (not met) row leads with whether it can still be extended; the line is narrow beside
+  // the date badge, so the reason replaces the amount and starts rather than being cut off.
+  const endedSubtitle = (request) => {
+    if (request.how === 'met') return `${p2Rupees(request.amount)} · ${request.starts} payment starts`;
+    return p2ExtendBlock(request) || `Can be extended until ${p2ExtendableUntil(request)}`;
+  };
   const [confirmId, setConfirmId] = React.useState(confirmInitial);
   const confirming = own.find((request) => request.id === confirmId);
   return (
     <P2Screen>
       <P2AppBar title="Payments" subtitle={P2_MASJID.name} back={() => go('console-ready')} />
-      <P2Scroll fab>
+      <P2Scroll fab anchor={anchor}>
         <P2RequestComposer go={go} form={form} setForm={setForm} />
+        {replacement === 'returned' && <P2ReturnedCard go={go} />}
         {soon && (
           // The reminder the committee also gets as a notification: nothing ends without warning.
+          // At the extension limit it offers Mark as met only, and says why.
           <div className="list-group attention p2-reminder">
-            <P2Row icon="schedule" title={`${p2RequestTitle(soon)} ends in ${soon.endsIn} days`} subtitle={`Ends ${p2EndDate(soon.endsIn)} · ${soon.starts} payment starts so far`} />
-            <div className="p2-reminder-actions">
-              <button type="button" className="btn btn-tonal sm" onClick={() => onExtend(soon.id)}>Extend {P2_EXTEND_DAYS} days</button>
+            <P2Row icon="schedule" title={`${p2RequestTitle(soon)} ends in ${soon.endsIn} days`} subtitle={`Ends ${p2EndDate(soon.endsIn)} · ${soon.starts} payment starts so far${soonBlock ? `. ${soonBlock}.` : ''}`} />
+            <div className={`p2-reminder-actions ${soonBlock ? 'single' : ''}`}>
+              {!soonBlock && <button type="button" className="btn btn-tonal sm" onClick={() => onExtend(soon.id)}>Extend {P2_EXTEND_DAYS} days</button>}
               <button type="button" className="btn btn-filled sm" onClick={() => setConfirmId(soon.id)}>Mark as met</button>
+            </div>
+          </div>
+        )}
+        {reopen && (
+          // An ended, not-met request inside the 7-day window: the same reminder, Extend only —
+          // an ended request cannot be marked met.
+          <div className="list-group attention p2-reminder">
+            <P2Row icon="history" title={`${p2RequestTitle(reopen)} ended ${reopen.endedAgo} days ago`} subtitle={`You can extend it until ${p2ExtendableUntil(reopen)} · ${reopen.starts} payment starts so far`} />
+            <div className="p2-reminder-actions single">
+              <button type="button" className="btn btn-tonal sm" onClick={() => onExtend(reopen.id)}>Extend {P2_EXTEND_DAYS} days</button>
             </div>
           </div>
         )}
@@ -570,12 +859,13 @@ function P2MasjidPayments({ go, form, setForm, requests = P2_REQUESTS, ended = P
           {P2_STARTS.slice(0, 2).map((start) => <P2Row key={start.when} icon="arrow_forward" title={`${p2Rupees(start.amount)} · ${start.note}`} subtitle={`${start.when} · UPI app opened`} trailing={<P2Badge>Started</P2Badge>} onClick={() => go('initiations')} />)}
         </P2Group>
         <P2Note>Activity shows payment starts only. Confirm money received in your bank or UPI app.</P2Note>
-        <P2Section title="Ended" hint="No longer shown to followers" />
+        <P2Section title="Ended" hint="No longer shown to followers" anchor="ended" />
         <P2Group>
-          {ended.map((request) => <P2Row key={request.id} icon={request.icon} title={p2RequestTitle(request)} subtitle={`${p2Rupees(request.amount)} · ${request.starts} payment starts`} trailing={<P2Badge tone="muted">{request.how === 'met' ? 'Met' : 'Ended'} {request.endedOn}</P2Badge>} />)}
+          {ended.map((request) => <P2Row key={request.id} icon={request.icon} title={p2RequestTitle(request)} subtitle={endedSubtitle(request)} trailing={<P2Badge tone="muted">{request.how === 'met' ? 'Met' : 'Ended'} {request.endedOn}</P2Badge>} />)}
         </P2Group>
-        <P2Group label="Payee">
-          <P2Row icon="verified" title={P2_MASJID.payee} subtitle={P2_MASJID.vpa} onClick={() => go('masjid-details')} />
+        <P2Group label="Payee" anchor="payee">
+          <P2Row icon="verified" title={P2_MASJID.payee} subtitle={`${replacement === 'none' ? '' : 'Active · '}${P2_MASJID.vpa}`} onClick={() => go(replacement === 'pending' ? 'details-replacing' : 'masjid-details')} />
+          {replacement === 'pending' ? <P2PendingPayeeRow /> : <P2ReplaceRow go={go} />}
         </P2Group>
       </P2Scroll>
       <button type="button" className="fab" onClick={() => go('request-amount')} aria-label="New payment request"><P2Icon name="add" /><span className="fab-label">New request</span></button>
@@ -592,18 +882,22 @@ function P2MasjidPayments({ go, form, setForm, requests = P2_REQUESTS, ended = P
     </P2Screen>
   );
 }
-function P2RequestAmount({ go, form, setForm }) {
-  const valid = Number(form.target) > 0;
+// Continue stays enabled (proposal 2): the press answers with a field-level error, as
+// registration's Continue and the Salaah editor's Publish do. A grey button never says what is wrong.
+function P2RequestAmount({ go, form, setForm, errorInitial = false }) {
+  const [tried, setTried] = React.useState(errorInitial);
+  const problem = p2AmountError(form.target, P2_REQUEST_MAX, `A request can be up to ${p2Rupees(P2_REQUEST_MAX)}`);
+  const next = () => { if (problem) { setTried(true); return; } go('request-details'); };
   return (
     <P2Screen>
       <P2AppBar title="New request" back={() => go('masjid-payments')} step={1} />
       <P2Scroll step>
         <P2Heading eyebrow="Start with the need" title="How much is needed?" lead="Followers see this amount on the request card." />
-        <P2AmountField label="Amount needed" value={form.target} onChange={(target) => setForm({ ...form, target })} presets={['1000', '5000', '10000', '25000']} />
+        <P2AmountField label="Amount needed" value={form.target} onChange={(target) => setForm({ ...form, target })} presets={['1000', '5000', '10000', '25000']} error={tried ? problem : null} />
         <P2Note>A requested amount, not a target Paigham can track. Followers do not see a progress bar or a collected total.</P2Note>
       </P2Scroll>
-      <P2Docked note={valid ? null : 'Enter an amount greater than ₹0'}>
-        <P2Button onClick={() => valid && go('request-details')} disabled={!valid}>Continue</P2Button>
+      <P2Docked>
+        <P2Button onClick={next}>Continue</P2Button>
       </P2Docked>
     </P2Screen>
   );
@@ -636,8 +930,12 @@ function P2RequestDetails({ go, form, setForm }) {
 }
 
 // The end date is a filled-in row, not a step: 30 days unless the committee changes it.
-function P2RequestReview({ go, form, setForm = P2_NOOP, sheetInitial = false }) {
-  const { OptionSheet } = window;
+// `liveAs` (4 Oct, as built): the first Publish had an unknown outcome, the member edited the
+// draft, and the retry found the FIRST version already live. The edits stay on this screen as a
+// new request (a fresh request id) and a notice sheet says what is live.
+function P2RequestReview({ go, form, setForm = P2_NOOP, sheetInitial = false, liveAs = null }) {
+  const { OptionSheet, Dialog } = window;
+  const [notice, setNotice] = React.useState(Boolean(liveAs));
   const [sheet, setSheet] = React.useState(sheetInitial);
   const duration = form.duration || P2_DEFAULT_DURATION;
   const request = { masjid: 'bilal', title: form.title, detail: form.detail, amount: form.target || P2_SAMPLE_FORM.target, icon: 'volunteer_activism', endsIn: Number(duration) };
@@ -655,6 +953,7 @@ function P2RequestReview({ go, form, setForm = P2_NOOP, sheetInitial = false }) 
         <P2Note>Paigham cannot confirm or total the money received. This request does not show collection progress.</P2Note>
       </P2Scroll>
       <P2Docked><P2Button onClick={() => go('published')}>Publish request</P2Button></P2Docked>
+      {Dialog && liveAs && notice && <Dialog isOpen mode="sheet" onClose={() => setNotice(false)} title="Your request is live" description={`${p2RequestTitle({ masjid: 'bilal', title: liveAs.title })} · ${p2Rupees(liveAs.target)} requested · ends ${p2EndDate(liveAs.duration)}. It went live as first sent. Your changes are kept here as a new request.`} primary={null} secondary={{ text: 'Dismiss', onClick: () => setNotice(false) }} />}
       {OptionSheet && <OptionSheet isOpen={sheet} title="Keep it live for" value={duration} options={P2_DURATIONS.map(([value, label]) => ({ value, label: `${label} · ends ${p2EndDate(value)}` }))} onPick={(value) => setForm({ ...form, duration: value })} onClose={() => setSheet(false)} />}
     </P2Screen>
   );
@@ -807,8 +1106,11 @@ function P2ChooseMasjid({ go, give, backTo = 'user-home-empty' }) {
       <P2AppBar title="Choose a masjid" subtitle="Masjids you follow" back={() => go(backTo)} />
       <P2Scroll>
         <P2Heading title="Give directly" lead="Only masjids with an Admin-approved UPI payee are ready." />
+        {/* Every followed masjid with an ACTIVE payee, primary first then by name, whether or not it
+            has a live request (Masjid E Quba has none). "Verified payee" always sits beside the
+            bank name (TRD §8.1). */}
         <P2Group label="Accepting UPI">
-          {Object.values(P2_MASJIDS).map((masjid) => <P2Row key={masjid.key} lead={<P2MasjidMark masjid={masjid} size={40} />} title={masjid.name} subtitle={`${masjid.key === P2_MASJID.key ? 'Primary · ' : ''}Verified payee · ${masjid.place}`} onClick={() => give(masjid.key)} />)}
+          {Object.values(P2_MASJIDS).map((masjid) => <P2Row key={masjid.key} lead={<P2MasjidMark masjid={masjid} size={40} />} title={masjid.name} subtitle={`${masjid.key === P2_MASJID.key ? 'Primary · ' : ''}${masjid.place} · Verified payee · ${masjid.bankName}`} onClick={() => give(masjid.key)} />)}
         </P2Group>
         <P2Group label="Not accepting yet">
           <P2Row lead={<P2Tile icon="mosque" size={40} />} title="Masjid Al Noor" subtitle="UPI setup not complete" trailing={<P2Badge tone="muted">Not yet</P2Badge>} />
@@ -834,13 +1136,38 @@ function P2Updates({ go, give, requests = P2_REQUESTS }) {
 
 // ── Follower · UPI handoff ─────────────────────────────────────────────
 
-function P2Amount({ go, amount, setAmount, backTo = 'user-home', masjid = P2_MASJID, request = null }) {
-  const valid = Number(amount) > 0;
+// Choose a UPI app stays enabled and answers an invalid amount under the field (proposal 2).
+// `preparing`: after an app is picked, the hand-off is being recorded — the button is inert and
+//   busy, the field holds still, and the capsule names the app; nothing opens until it returns.
+// `changed`: the server refused the prepare with PAYEE_CHANGED (the masjid's active payee is not
+//   the one this screen showed). The refreshed payee moves to the top under an attention row, and
+//   the action becomes an explicit confirmation; no UPI app was opened (F10).
+// The give field reads whole rupees as typed (as built, 4 Oct): a decimal point and any other
+// non-digit each get their own line. `failure` is an error the server returned for the prepare,
+// shown in the app's error sheet: the app's title for the code over the server's own message.
+function P2Amount({ go, amount, setAmount, backTo = 'user-home', masjid = P2_MASJID, request = null, errorInitial = false, preparing = false, changed = false, app = 'Google Pay', failure = null }) {
+  const { Dialog } = window;
+  const [tried, setTried] = React.useState(errorInitial);
+  const [failed, setFailed] = React.useState(Boolean(failure));
+  const problem = p2AmountError(amount, P2_GIVE_MAX, `You can give up to ${p2Rupees(P2_GIVE_MAX)} at a time`);
+  const next = () => { if (problem) { setTried(true); return; } go('apps'); };
+  // POC only: stand in for the prepare round trip, then hand off.
+  React.useEffect(() => {
+    if (!preparing) return undefined;
+    const timer = setTimeout(() => go('handoff'), 1600);
+    return () => clearTimeout(timer);
+  }, [preparing]);
   return (
     <P2Screen>
       <P2AppBar title="Give with UPI" back={() => go(backTo)} />
       <P2Scroll>
         <P2Group><P2Identity masjid={masjid} /></P2Group>
+        {changed && (
+          <>
+            <P2Group attention><P2Row icon="update" title="These UPI details changed" subtitle="No UPI app was opened. Check the new name and UPI ID before you pay." /></P2Group>
+            <P2PayeeGroup masjid={masjid} label="Pays to · updated" />
+          </>
+        )}
         <div className="summary-hero">
           <P2Tile icon={request ? request.icon : 'favorite'} accent />
           <div className="summary-hero-copy">
@@ -849,14 +1176,15 @@ function P2Amount({ go, amount, setAmount, backTo = 'user-home', masjid = P2_MAS
             {request && <div className="summary-hero-label">{p2Rupees(request.amount)} requested by the masjid</div>}
           </div>
         </div>
-        <P2AmountField label="Your amount" value={amount} onChange={setAmount} presets={['100', '250', '500', '1000']} />
-        <P2PayeeGroup masjid={masjid} />
+        <P2AmountField label="Your amount" value={amount} onChange={setAmount} presets={['100', '250', '500', '1000']} error={tried ? problem : null} disabled={preparing} />
+        {!changed && <P2PayeeGroup masjid={masjid} />}
         <P2Note>Money goes to this UPI payee, not Paigham. Check the name in your UPI app.</P2Note>
         <P2Note icon="shield">Paigham keeps a record that you started this payment: the amount, the app you chose and what the app reports back.</P2Note>
       </P2Scroll>
-      <P2Docked note={valid ? null : 'Enter an amount greater than ₹0'}>
-        <P2Button onClick={() => valid && go('apps')} disabled={!valid}>Choose a UPI app</P2Button>
+      <P2Docked status={preparing ? `Preparing ${app}…` : null}>
+        <P2Button onClick={next} busy={preparing}>{changed ? 'Confirm and choose a UPI app' : 'Choose a UPI app'}</P2Button>
       </P2Docked>
+      {Dialog && failure && failed && <Dialog isOpen mode="sheet" onClose={() => setFailed(false)} title={failure.title} description={failure.message} primary={null} secondary={{ text: 'Dismiss', onClick: () => setFailed(false) }} />}
     </P2Screen>
   );
 }
@@ -869,7 +1197,7 @@ function P2Apps({ go, amount, app, setApp, backTo, masjid, request }) {
   return (
     <>
       <P2Amount go={go} amount={amount} setAmount={P2_NOOP} backTo={backTo} masjid={masjid} request={request} />
-      {OptionSheet && <OptionSheet isOpen title={`Pay ${p2Rupees(amount)} with`} value={app} options={P2_UPI_APPS.map((name) => ({ value: name, label: name }))} onPick={(name) => { picked.current = true; setApp(name); go('handoff'); }} onClose={() => { if (!picked.current) go('amount'); }} />}
+      {OptionSheet && <OptionSheet isOpen title={`Pay ${p2Rupees(amount)} with`} value={app} options={P2_UPI_APPS.map((name) => ({ value: name, label: name }))} onPick={(name) => { picked.current = true; setApp(name); go('amount-preparing'); }} onClose={() => { if (!picked.current) go('amount'); }} />}
     </>
   );
 }
@@ -933,29 +1261,56 @@ function P2Terms({ go, returnStage = 'android-done' }) {
 
 // ── Router, device and board ───────────────────────────────────────────
 
-function P2Stage({ stage, go = P2_NOOP, give = P2_NOOP, approved = false, termsFrom = 'android-done', amount = '250', setAmount = P2_NOOP, app = 'Google Pay', setApp = P2_NOOP, form = P2_SAMPLE_FORM, setForm = P2_NOOP, posted = false, closed = [], extended = [], onClose = P2_NOOP, onExtend = P2_NOOP, paymentFrom = 'user-home', chooseFrom = 'user-home-empty', giveTo = { masjid: 'bilal', request: null } }) {
-  const requests = p2AllRequests(form, posted, closed, extended);
-  const ended = p2EndedRequests(form, posted, closed);
-  const hub = { go, form, setForm, requests, ended, onClose, onExtend };
-  const masjid = P2_MASJIDS[giveTo.masjid];
+function P2Stage({ stage, live = false, go = P2_NOOP, give = P2_NOOP, approved = false, termsFrom = 'android-done', amount = '250', setAmount = P2_NOOP, app = 'Google Pay', setApp = P2_NOOP, form = P2_SAMPLE_FORM, setForm = P2_NOOP, posted = false, closed = [], extended = [], onClose = P2_NOOP, onExtend = P2_NOOP, paymentFrom = 'user-home', chooseFrom = 'user-home-empty', giveTo = { masjid: 'bilal', request: null }, replacement = 'none', recentEnded = false }) {
+  const recent = recentEnded || P2_RECENT_ENDED_STAGES.includes(stage);
+  const requests = p2AllRequests(form, posted, closed, extended, recent);
+  const ended = p2EndedRequests(form, posted, closed, extended, recent);
+  const repl = P2_STAGE_REPLACEMENT[stage] || replacement;
+  const hub = { go, form, setForm, requests, ended, onClose, onExtend, replacement: repl };
+  // After a confirmed PAYEE_CHANGED the follower gives to the refreshed (new) payee.
+  const masjid = giveTo.payee ? { ...P2_MASJIDS[giveTo.masjid], ...P2_NEW_PAYEE } : P2_MASJIDS[giveTo.masjid];
   const request = giveTo.request;
+  const amountProps = { go, amount, setAmount, backTo: paymentFrom, masjid, request, app };
   switch (stage) {
     case 'console': return <P2Console go={go} ready={approved} />;
     case 'scan': return <P2Scan title="Scan masjid QR" hint="The payment QR already at your masjid" action="Simulate QR scan" onBack={() => go('console')} onScan={() => go('review')} />;
     case 'review': return <P2Review go={go} />;
     case 'pending': return <P2Pending go={go} />;
-    case 'ready': return <P2Ready go={go} />;
+    case 'ready': return <P2Ready go={go} replacement={repl} />;
     case 'admin-home': return <P2AdminHome go={go} />;
     case 'admin-queue': return <P2AdminQueue go={go} />;
     case 'admin-review': return <P2AdminReview go={go} />;
     case 'admin-approved': return <P2AdminDecision go={go} approved />;
     case 'admin-returned': return <P2AdminDecision go={go} />;
-    case 'console-ready': return <P2Console go={go} ready requests={requests} />;
-    case 'masjid-details': return <P2MasjidDetails go={go} requests={requests} />;
+    case 'admin-self-review': return <P2AdminReview go={go} mode="self" />;
+    case 'admin-suspend': return <P2AdminReview go={go} mode="active" />;
+    case 'admin-suspended-empty': return <P2AdminSuspendedEmpty go={go} />;
+    case 'admin-replacement': return <P2AdminReview go={go} mode="replacement" />;
+    case 'admin-replace-confirm': return <P2AdminReview go={go} mode="confirm" />;
+    case 'console-returned': return <P2Console go={go} payeeCard="returned" />;
+    case 'console-paused': return <P2Console go={go} payeeCard="paused" />;
+    case 'hub-returned': return <P2HubStatus go={go} state="returned" />;
+    case 'hub-paused': return <P2HubStatus go={go} state="paused" />;
+    case 'request-amount-paise-fix': return <P2RequestAmount go={go} form={live ? form : { ...form, target: '250.50' }} setForm={setForm} errorInitial />;
+    case 'published-unknown': return <P2RequestReview key="live-as" go={go} form={P2_EDITED_FORM} liveAs={P2_SAMPLE_FORM} />;
+    case 'console-ready': return <P2Console go={go} ready requests={requests} replacement={repl} />;
+    case 'masjid-details': return <P2MasjidDetails go={go} requests={requests} replacement={repl} />;
     case 'masjid-details-basic': return <P2MasjidDetails go={go} ready={false} />;
     case 'masjid-payments': return <P2MasjidPayments {...hub} />;
     case 'close-confirm': return <P2MasjidPayments {...hub} confirmInitial="untitled" />;
     case 'request-amount': return <P2RequestAmount go={go} form={form} setForm={setForm} />;
+    case 'request-amount-invalid': return <P2RequestAmount go={go} form={live ? form : { ...form, target: '' }} setForm={setForm} errorInitial />;
+    case 'hub-extend': return <P2MasjidPayments {...hub} />;
+    case 'hub-ended-list': return <P2MasjidPayments {...hub} anchor="ended" />;
+    case 'reminder-cap': return <P2MasjidPayments {...hub} requests={requests.map((item) => item.id === 'untitled' ? { ...item, extendedCount: P2_MAX_EXTENSIONS } : item)} />;
+    case 'replace-scan': return <P2Scan title="Scan the new payment QR" hint="Your current payee stays active until it is approved" action="Simulate QR scan" onBack={() => go('ready')} onScan={() => go('replace-review')} />;
+    case 'replace-review': return <P2Review go={go} replacing />;
+    case 'replace-pending': return <P2Ready go={go} replacement="pending" />;
+    case 'console-replacing': return <P2Console go={go} ready requests={requests} replacement="pending" />;
+    case 'console-replace-returned': return <P2Console go={go} ready requests={requests} replacement="returned" />;
+    case 'details-replacing': return <P2MasjidDetails go={go} requests={requests} replacement="pending" anchor="payments" />;
+    case 'hub-replacing': return <P2MasjidPayments {...hub} anchor="payee" />;
+    case 'hub-replace-returned': return <P2MasjidPayments {...hub} />;
     case 'request-details': return <P2RequestDetails go={go} form={form} setForm={setForm} />;
     case 'request-review': return <P2RequestReview go={go} form={form} setForm={setForm} />;
     case 'request-ends': return <P2RequestReview go={go} form={form} setForm={setForm} sheetInitial />;
@@ -969,7 +1324,13 @@ function P2Stage({ stage, go = P2_NOOP, give = P2_NOOP, approved = false, termsF
     case 'choose-masjid': return <P2ChooseMasjid go={go} give={give} backTo={chooseFrom} />;
     case 'updates': return <P2Updates go={go} give={give} requests={requests} />;
     case 'user-scan': return <P2Scan title="Scan a payment QR" hint="We check it belongs to a registered masjid" action="Simulate registered QR" onBack={() => go('user-home')} onScan={() => give('bilal')} />;
-    case 'amount': return <P2Amount go={go} amount={amount} setAmount={setAmount} backTo={paymentFrom} masjid={masjid} request={request} />;
+    case 'amount': return <P2Amount {...amountProps} />;
+    case 'amount-invalid': return <P2Amount {...amountProps} amount={live ? amount : ''} errorInitial />;
+    case 'amount-paise': return <P2Amount {...amountProps} amount={live ? amount : '250.50'} errorInitial />;
+    case 'amount-not-digits': return <P2Amount {...amountProps} amount={live ? amount : '1,000'} errorInitial />;
+    case 'amount-rate-limited': return <P2Amount key="rate-limited" {...amountProps} failure={P2_RATE_LIMITED} />;
+    case 'amount-preparing': return <P2Amount {...amountProps} preparing />;
+    case 'amount-changed': return <P2Amount {...amountProps} masjid={{ ...P2_MASJIDS.bilal, ...P2_NEW_PAYEE }} changed />;
     case 'apps': return <P2Apps go={go} amount={amount} app={app} setApp={setApp} backTo={paymentFrom} masjid={masjid} request={request} />;
     case 'handoff': return <P2Handoff go={go} amount={amount} app={app} masjid={masjid} request={request} />;
     case 'terms': return <P2Terms go={go} returnStage={termsFrom} />;
@@ -978,10 +1339,10 @@ function P2Stage({ stage, go = P2_NOOP, give = P2_NOOP, approved = false, termsF
 }
 
 function P2Device({ stage, live, ...props }) {
-  return <div className="noor-frame" style={{ '--s': live ? '0.82' : '0.46' }}><div className="noor-frame-inner"><div className="noor-screen"><div className="noor-island" /><P2Stage stage={stage} {...props} /><div className="noor-home" /></div></div></div>;
+  return <div className="noor-frame" style={{ '--s': live ? '0.82' : '0.46' }}><div className="noor-frame-inner"><div className="noor-screen"><div className="noor-island" /><P2Stage stage={stage} live={live} {...props} /><div className="noor-home" /></div></div></div>;
 }
 
-const P2_MASJID_STAGES = ['console', 'console-ready', 'scan', 'review', 'pending', 'ready', 'masjid-details', 'masjid-details-basic', 'masjid-payments', 'request-amount', 'request-details', 'request-review', 'request-ends', 'published', 'close-confirm', 'initiations'];
+const P2_MASJID_STAGES = ['console', 'console-ready', 'scan', 'review', 'pending', 'ready', 'masjid-details', 'masjid-details-basic', 'masjid-payments', 'request-amount', 'request-amount-invalid', 'request-details', 'request-review', 'request-ends', 'published', 'close-confirm', 'hub-extend', 'hub-ended-list', 'reminder-cap', 'initiations', 'replace-scan', 'replace-review', 'replace-pending', 'console-replacing', 'console-replace-returned', 'details-replacing', 'hub-replacing', 'hub-replace-returned', 'console-returned', 'console-paused', 'hub-returned', 'hub-paused', 'request-amount-paise-fix', 'published-unknown'];
 const P2_EMPTY_FORM = { title: '', detail: '', target: '', duration: P2_DEFAULT_DURATION };
 function PaymentsV2Experience() {
   const params = new URLSearchParams(window.location.search);
@@ -997,6 +1358,8 @@ function PaymentsV2Experience() {
   const [chooseFrom, setChooseFrom] = React.useState('user-home-empty');
   const [closed, setClosed] = React.useState([]);
   const [extended, setExtended] = React.useState([]);
+  const [replacement, setReplacement] = React.useState('none');
+  const [recentEnded, setRecentEnded] = React.useState(false);
   const closeRequest = (id) => setClosed((ids) => ids.includes(id) ? ids : [...ids, id]);
   const extendRequest = (id) => setExtended((ids) => ids.includes(id) ? ids : [...ids, id]);
   const go = (target) => {
@@ -1006,14 +1369,25 @@ function PaymentsV2Experience() {
     if (target === 'admin-returned') setApproved(false);
     // The amount is the only required field; a request without a title still publishes.
     if (target === 'published' && Number(form.target) > 0) setPosted(true);
-    if (target === 'amount' && !['apps', 'handoff'].includes(stage)) setPaymentFrom(stage);
+    if (target === 'amount' && !['apps', 'handoff', 'amount-preparing'].includes(stage)) setPaymentFrom(stage);
+    if (target === 'amount-invalid') setAmount('');
+    if (target === 'request-amount-invalid') setForm((current) => ({ ...current, target: '' }));
+    if (target === 'amount-paise') setAmount('250.50');
+    if (target === 'amount-not-digits') setAmount('1,000');
+    if (target === 'amount-rate-limited') setAmount('250');
+    if (target === 'request-amount-paise-fix') setForm((current) => ({ ...current, target: '250.50' }));
+    if (P2_STAGE_REPLACEMENT[target]) setReplacement(P2_STAGE_REPLACEMENT[target]);
+    if (P2_RECENT_ENDED_STAGES.includes(target)) setRecentEnded(true);
+    // Confirming changed UPI details binds the give to the refreshed payee.
+    if (stage === 'amount-changed' && target === 'apps') setGiveTo({ masjid: 'bilal', request: null, payee: 'new' });
+    if (target === 'amount-changed') setPaymentFrom('user-home');
     if (target === 'masjid-details' && !approved && stage === 'console') target = 'masjid-details-basic';
     setStage(target);
   };
   const give = (masjid, request = null) => { setGiveTo({ masjid, request }); setAmount('250'); go('amount'); };
   const capture = params.get('capture') === '1';
   const role = stage.startsWith('admin') ? 'admin' : P2_MASJID_STAGES.includes(stage) ? 'masjid' : 'user';
-  const restart = () => { setStage('console'); setApproved(false); setPosted(false); setPaymentFrom('user-home'); setAmount('250'); setForm(P2_EMPTY_FORM); setGiveTo({ masjid: 'bilal', request: null }); setClosed([]); setExtended([]); };
+  const restart = () => { setStage('console'); setApproved(false); setPosted(false); setPaymentFrom('user-home'); setAmount('250'); setForm(P2_EMPTY_FORM); setGiveTo({ masjid: 'bilal', request: null }); setClosed([]); setExtended([]); setReplacement('none'); setRecentEnded(false); };
   return (
     <div className="poc-stage">
       <div className="poc-frames p2-board">
@@ -1021,16 +1395,34 @@ function PaymentsV2Experience() {
           <span className="eyebrow accent">Paigham · Payments / Design POC 03</span>
           <h1>Direct giving, without a payment claim</h1>
           <p>Five journeys on one board. A payment request has one type: the amount comes first and the title is optional. News without an ask stays a Paigham. The follower Friday card appears only on Fridays, for a primary masjid that accepts payments.</p>
+          <p>Review fixes, 2 Oct 2026, approved as drawn on 2 Oct 2026: frames marked New were added, frames marked Changed alter an earlier frame. They cover extensions within 7 days of ending, replacing an active payment QR, a payee that changed before payment, and amount steps that answer on tap.</p>
+          <p>Review corrections, 4 Oct 2026, approved by the product owner on 4 Oct 2026: frames marked Approved 4 Oct come from an independent payments review. Each frame’s note says whether the app or admin build already does it (drawn exactly as built) or whether it is not built yet. They cover a first payment QR that was returned or suspended, a publish that went live as first sent, whole-rupee amount lines, readable error titles in the app and admin, the admin suspend sheet, and reviewing a replacement payee.</p>
+          <div className="p2-decisions">
+            <span className="eyebrow accent">Decided 4 Oct · board wording kept, TRD §8.1 updated to match</span>
+            <P2Group>
+              <P2Row icon="check_circle" title="iOS result title" subtitle="“Check {App}”." />
+              <P2Row icon="check_circle" title="Verified payee line" subtitle="“Verified payee · {UPI ID}”, under the bank name." />
+              <P2Row icon="check_circle" title="Payee changed before hand-off" subtitle="“These UPI details changed” + “No UPI app was opened. Check the new name and UPI ID before you pay.”" />
+              <P2Row icon="check_circle" title="Suspended masjid" subtitle="May rescan: the paused card offers “Scan a new QR”, into the first-time scan." />
+            </P2Group>
+            <span className="eyebrow accent">Still open</span>
+            <P2Group>
+              <P2Row icon="info" title="Admin reason “Other”" subtitle="The committee reads the wire value as a sentence, so it shows “Other.” with nothing to act on. Keep, reword, or ask the admin for a line." />
+              <P2Row icon="info" title="POC frames with no app screen" subtitle="“Open UPI app” (hand-off) and “About payment status” (terms) have no screen in the app. Keep them as targets, or drop them from the board." />
+            </P2Group>
+          </div>
           <div>{['Existing masjid UPI QR', 'Admin-reviewed payee', 'Amount first · title optional', 'No bank status'].map((tag) => <P2Badge key={tag}>{tag}</P2Badge>)}</div>
         </div>
         {P2_ROWS.map((row) => (
           <section key={row.number} className="p2-board-row">
             <div className="poc-row-label"><P2Icon name={row.icon} /> {row.number} · {row.title} · {row.frames.length} screens</div>
             <div className="poc-board">
-              {row.frames.map(([id, label]) => (
+              {row.frames.map(([id, label, mark, note]) => (
                 <div key={id} className="poc-board-item p2-frame-pick" role="button" tabIndex={0} aria-label={label} onClick={() => go(id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') go(id); }}>
                   <P2Device stage={id} />
-                  <span className="poc-frame-caption">{label}</span>
+                  <span className="poc-frame-caption">{label}{mark && mark !== 'approved' && <> <P2Badge tone={mark === 'new' ? 'amber' : 'teal'}>{mark === 'new' ? 'New' : 'Changed'}</P2Badge></>}</span>
+                  {mark === 'approved' && <P2Badge tone="jade"><P2Icon name="check_circle" />Approved 4 Oct</P2Badge>}
+                  {note && <small className="p2-frame-note">{note}</small>}
                 </div>
               ))}
             </div>
@@ -1041,7 +1433,7 @@ function PaymentsV2Experience() {
         <div className="payments-demo-tabs" aria-label="Switch design flow">
           {[['masjid', 'Masjid', 'console'], ['admin', 'Paigham Admin', 'admin-home'], ['user', 'Follower', 'user-home']].map(([id, label, target]) => <button type="button" key={id} className={`btn sm ${role === id ? 'btn-filled' : 'btn-tonal'}`} onClick={() => go(target)}>{label}</button>)}
         </div>
-        <P2Device stage={stage} go={go} give={give} live approved={approved} termsFrom={termsFrom} amount={amount} setAmount={setAmount} app={app} setApp={setApp} form={form} setForm={setForm} posted={posted} closed={closed} extended={extended} onClose={closeRequest} onExtend={extendRequest} paymentFrom={paymentFrom} chooseFrom={chooseFrom} giveTo={giveTo} />
+        <P2Device stage={stage} go={go} give={give} live replacement={replacement} recentEnded={recentEnded} approved={approved} termsFrom={termsFrom} amount={amount} setAmount={setAmount} app={app} setApp={setApp} form={form} setForm={setForm} posted={posted} closed={closed} extended={extended} onClose={closeRequest} onExtend={extendRequest} paymentFrom={paymentFrom} chooseFrom={chooseFrom} giveTo={giveTo} />
         <button className="poc-play" type="button" onClick={restart}><P2Icon name="replay" /> Restart</button>
       </div>
     </div>

@@ -15,6 +15,12 @@
 .p2-board-row{margin-bottom:8px;padding-left:46px}
 .p2-frame-pick{border:0;background:transparent;padding:0;cursor:pointer;font:inherit}
 .p2-frame-pick:focus-visible{outline:3px solid var(--color-action-primary);outline-offset:8px;border-radius:20px}
+.p2-board-intro>.p2-decisions{flex-direction:column;align-items:stretch;gap:var(--size-md);margin:0 0 20px}
+.p2-decisions .list-group{margin:0}
+/* A decision row quotes both wordings in full; the kit's two-line clamp would cut one off. */
+.p2-decisions .list-item-subtitle{display:block;overflow:visible}
+/* A frame's note sits under its caption, no wider than the scaled device. */
+.p2-frame-note{max-width:185px;font-size:11px;line-height:1.4;text-align:center;color:var(--color-info-secondary)}
 @media(max-width:760px){.payments-demo-tabs{position:sticky;top:var(--size-md);z-index:3}}
 
 /* ── Screen shell: the Console's Screen + Body geometry ── */
@@ -34,6 +40,8 @@
 .p2-scroll.over-nav{gap:0;padding:0 0 120px}
 .p2-scroll.under-fab{padding-bottom:104px}
 .p2-scroll>.list-group{margin-top:0}
+/* Board framing: a frame opened scrolled to a section measures offsets from the scroll column. */
+.p2-scroll.is-anchored{position:relative}
 /* A scroll column must not squeeze its cards to fit; it scrolls instead. */
 .p2-scroll>*{flex-shrink:0}
 .p2-heading{display:flex;flex-direction:column;gap:6px}
@@ -52,6 +60,9 @@
 .p2-textarea textarea.val::placeholder{color:var(--color-input-placeholder)}
 .p2-reminder{padding-bottom:var(--size-lg)}
 .p2-reminder-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--size-md);padding:0 var(--size-sm)}
+/* One action only: an ended request (Extend), a request at the extension limit (Mark as met),
+   or a returned replacement QR (Scan again). */
+.p2-reminder-actions.single{grid-template-columns:1fr}
 .p2-console-head{display:flex;align-items:center;gap:var(--size-lg);min-height:54px}
 .p2-console-id{flex:1;min-width:0;display:flex;flex-direction:column}
 .p2-console-head strong{font-size:15px}
@@ -157,3 +168,9 @@ textarea.p2-composer-field{min-height:96px;resize:none;font-size:14px}
 .p2-fab-split.compact>button{padding:0;gap:0}
 .p2-fab-split.compact .fab-label{max-width:0;opacity:0;transition:max-width var(--motion-standard) var(--ease-spring),opacity var(--motion-exit) var(--ease-out)}
 @media(prefers-reduced-motion:reduce){.p2-fab-split>button,.p2-fab-split .fab-label{transition:none}.p2-fab-split>button:active{transform:none}}
+
+/* ── The admin reason sheet (.adm-reject on the admin board, page-local there): the option list
+   scrolls under the title and the actions stay below it. Restated for the suspend proposal. ── */
+.p2-reason-sheet .dlg-body{flex-direction:column;min-height:0}
+.p2-reason-sheet .opt-list{flex:1;min-height:0}
+.p2-reason-sheet .dlg-actions{flex-shrink:0;margin-top:var(--size-xl)}
