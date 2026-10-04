@@ -103,12 +103,12 @@ const p2ExtendableUntil = (request) => p2EndDate(P2_EXTEND_GRACE_DAYS - request.
 // Field-level amount validation, answered on tap (the Paigham form pattern: the action stays
 // enabled and the field says what is wrong).
 // An amount is whole rupees (TRD §4.2) and the text is read as typed, never cleaned into another
-// number: "250.50" is not ₹25,050. As built, the request wizard answers any non-digit with the
-// minimum line; the give field (and, as a 4 Oct proposal, the wizard) names what is wrong.
-const p2AmountError = (value, max, maxCopy, separators = false) => {
+// number: "250.50" is not ₹25,050. The give field and the request wizard (approved 4 Oct) both
+// name what is wrong: a decimal point and any other non-digit each get their own line.
+const p2AmountError = (value, max, maxCopy) => {
   const text = String(value || '').trim();
-  if (separators && text.includes('.')) return 'Enter whole rupees, without paise';
-  if (separators && text && !/^\d+$/.test(text)) return 'Enter the amount in digits, like 500';
+  if (text.includes('.')) return 'Enter whole rupees, without paise';
+  if (text && !/^\d+$/.test(text)) return 'Enter the amount in digits, like 500';
   const amount = Number(text);
   if (!/^\d+$/.test(text) || !(amount >= 1)) return 'Enter an amount of at least ₹1';
   if (amount > max) return maxCopy;
@@ -116,15 +116,15 @@ const p2AmountError = (value, max, maxCopy, separators = false) => {
 };
 // A frame's optional third entry marks a review round. 'new' and 'changed' are the 2 Oct review
 // fixes, approved as drawn by the product owner on 2 Oct 2026: 'new' for a frame they added,
-// 'changed' for an earlier frame they alter. 'proposed' is the 4 Oct review corrections, NOT yet
-// approved. An optional fourth entry is a note shown under the caption (an open question, or
-// what the frame stands for beyond what it draws).
+// 'changed' for an earlier frame they alter. 'approved' is the 4 Oct review corrections, approved
+// by the product owner on 4 Oct 2026. An optional fourth entry is a note shown under the caption
+// (whether the build already does it, or what the frame stands for beyond what it draws).
 const P2_ROWS = [
-  { number: '01', title: 'Masjid · activate payments', icon: 'qr_code_scanner', frames: [['console', 'Console nudge'], ['scan', 'Scan existing QR'], ['review', 'Review payee'], ['pending', 'Awaiting review', 'changed'], ['ready', 'Payments ready', 'changed'], ['console-returned', 'Console · returned with reason', 'proposed', 'As built. The reason is the reviewer’s, ended with a full stop.'], ['hub-returned', 'Hub · QR returned', 'proposed', 'As built. The console’s own card; no composer while nothing is active.'], ['console-paused', 'Console · paused with reason', 'proposed', 'As built: no action. Open question: offer “Scan a new QR”? The server accepts a new submission; the app offers no entry.'], ['hub-paused', 'Hub · payments paused', 'proposed', 'As built: no setup promo, no action. Same open question as the console card.']] },
-  { number: '02', title: 'Paigham Admin · human review', icon: 'shield', frames: [['admin-home', 'Admin Console'], ['admin-queue', 'Payment QR queue'], ['admin-review', 'Review match'], ['admin-approved', 'Approved'], ['admin-returned', 'Returned'], ['admin-self-review', 'Error · own masjid’s QR', 'proposed', 'As built. Other titles: Already decided · QR not found · Super Admins only · Couldn’t complete that.'], ['admin-suspend', 'Suspend · its own reasons', 'proposed', 'Not built. Today Suspend reuses the six return reasons.'], ['admin-suspended-empty', 'Suspended tab · empty', 'proposed', 'Not built. Today: “A suspended payee stays here until it is reviewed again.”'], ['admin-replacement', 'Review · replacement', 'proposed', 'Not built. Needs a server field `replaces` on the review row.'], ['admin-replace-confirm', 'Replacement · confirm', 'proposed', 'Not built. Replaces “Approve this UPI ID?” for a replacement.']] },
-  { number: '03', title: 'Masjid · requests & activity', icon: 'campaign', frames: [['console-ready', 'Console · Payments entry'], ['masjid-details', 'Details · payment record', 'changed'], ['masjid-payments', 'Payments hub + FAB'], ['request-amount', '1 · Amount needed', 'changed'], ['request-amount-invalid', '1 · Amount · invalid on tap', 'new'], ['request-amount-paise', '1 · Amount · paise, as built', 'proposed', 'As built: “250.50” gets the minimum line.'], ['request-amount-paise-fix', '1 · Amount · paise, aligned', 'proposed', 'Not built. The give field’s two lines; “5,000” would read “Enter the amount in digits, like 500”.'], ['request-details', '2 · Title (optional)'], ['request-review', '3 · Review'], ['request-ends', '3 · End date sheet'], ['published', 'Visible to followers'], ['published-unknown', 'Publish · went live as first sent', 'proposed', 'As built. The first send’s outcome was unknown and the draft was edited before the retry.'], ['close-confirm', 'Mark as met · confirm'], ['hub-extend', 'Ended · extend within 7 days', 'new'], ['hub-ended-list', 'Ended · why Extend is unavailable', 'new'], ['reminder-cap', 'Ending soon · extension limit', 'new'], ['initiations', 'Initiations only']] },
+  { number: '01', title: 'Masjid · activate payments', icon: 'qr_code_scanner', frames: [['console', 'Console nudge'], ['scan', 'Scan existing QR'], ['review', 'Review payee'], ['pending', 'Awaiting review', 'changed'], ['ready', 'Payments ready', 'changed'], ['console-returned', 'Console · returned with reason', 'approved', 'As built. The reason is the reviewer’s, ended with a full stop.'], ['hub-returned', 'Hub · QR returned', 'approved', 'As built. The console’s own card; no composer while nothing is active.'], ['console-paused', 'Console · paused with reason', 'approved', 'Not built: “Scan a new QR” starts a first-time scan. Decided 4 Oct: a suspended masjid may rescan; the server already accepts a new submission.'], ['hub-paused', 'Hub · payments paused', 'approved', 'Not built: the console card’s “Scan a new QR”. Still no setup promo.']] },
+  { number: '02', title: 'Paigham Admin · human review', icon: 'shield', frames: [['admin-home', 'Admin Console'], ['admin-queue', 'Payment QR queue'], ['admin-review', 'Review match'], ['admin-approved', 'Approved'], ['admin-returned', 'Returned'], ['admin-self-review', 'Error · own masjid’s QR', 'approved', 'As built. Other titles: Already decided · QR not found · Super Admins only · Couldn’t complete that.'], ['admin-suspend', 'Suspend · its own reasons', 'approved', 'Not built. Today Suspend reuses the six return reasons.'], ['admin-suspended-empty', 'Suspended tab · empty', 'approved', 'Not built. Today: “A suspended payee stays here until it is reviewed again.”'], ['admin-replacement', 'Review · replacement', 'approved', 'Not built. Needs a server field `replaces` on the review row.'], ['admin-replace-confirm', 'Replacement · confirm', 'approved', 'Not built. Replaces “Approve this UPI ID?” for a replacement.']] },
+  { number: '03', title: 'Masjid · requests & activity', icon: 'campaign', frames: [['console-ready', 'Console · Payments entry'], ['masjid-details', 'Details · payment record', 'changed'], ['masjid-payments', 'Payments hub + FAB'], ['request-amount', '1 · Amount needed', 'changed'], ['request-amount-invalid', '1 · Amount · invalid on tap', 'new'], ['request-amount-paise-fix', '1 · Amount · paise, aligned', 'approved', 'Not built. The give field’s two lines; “5,000” reads “Enter the amount in digits, like 500”. Replaces the as-built minimum line.'], ['request-details', '2 · Title (optional)'], ['request-review', '3 · Review'], ['request-ends', '3 · End date sheet'], ['published', 'Visible to followers'], ['published-unknown', 'Publish · went live as first sent', 'approved', 'As built. The first send’s outcome was unknown and the draft was edited before the retry.'], ['close-confirm', 'Mark as met · confirm'], ['hub-extend', 'Ended · extend within 7 days', 'new'], ['hub-ended-list', 'Ended · why Extend is unavailable', 'new'], ['reminder-cap', 'Ending soon · extension limit', 'new'], ['initiations', 'Initiations only']] },
   { number: '04', title: 'Follower · discover', icon: 'home', frames: [['user-home', 'Friday · primary masjid card'], ['user-home-weekday', 'Weekday · requests carousel'], ['user-home-empty', 'No requests · give to primary'], ['user-home-none', 'No requests · primary not on UPI'], ['user-home-committee', 'Committee · split FAB'], ['updates', 'All requests'], ['choose-masjid', 'Choose a masjid', 'changed'], ['user-scan', 'Scan masjid QR']] },
-  { number: '05', title: 'Follower · UPI handoff', icon: 'account_balance', frames: [['amount', 'Enter amount', 'changed'], ['amount-invalid', 'Amount · invalid on tap', 'new'], ['amount-paise', 'Amount · paise entered', 'proposed', 'As built.'], ['amount-not-digits', 'Amount · not digits', 'proposed', 'As built.'], ['amount-rate-limited', 'Error · too many attempts', 'proposed', 'As built: the server’s message under the app’s title. Fallbacks: Something went wrong · No longer available.'], ['apps', 'Choose UPI app'], ['amount-preparing', 'Preparing the hand-off', 'new'], ['amount-changed', 'Payee changed · confirm', 'new'], ['handoff', 'Open UPI app'], ['android-done', 'Android · reported paid'], ['android-failed', 'Android · not completed'], ['android-unknown', 'Android · no result'], ['ios-return', 'iOS · check UPI app']] },
+  { number: '05', title: 'Follower · UPI handoff', icon: 'account_balance', frames: [['amount', 'Enter amount', 'changed'], ['amount-invalid', 'Amount · invalid on tap', 'new'], ['amount-paise', 'Amount · paise entered', 'approved', 'As built.'], ['amount-not-digits', 'Amount · not digits', 'approved', 'As built.'], ['amount-rate-limited', 'Error · too many attempts', 'approved', 'As built: the server’s message under the app’s title. Fallbacks: Something went wrong · No longer available.'], ['apps', 'Choose UPI app'], ['amount-preparing', 'Preparing the hand-off', 'new'], ['amount-changed', 'Payee changed · confirm', 'new'], ['handoff', 'Open UPI app'], ['android-done', 'Android · reported paid'], ['android-failed', 'Android · not completed'], ['android-unknown', 'Android · no result'], ['ios-return', 'iOS · check UPI app']] },
   { number: '06', title: 'Masjid · replace payment QR', icon: 'swap_horiz', frames: [['replace-scan', 'Scan the new QR', 'new'], ['replace-review', 'Review · replacement', 'new'], ['replace-pending', 'Payments on · new QR in review', 'new'], ['console-replacing', 'Console · new QR in review', 'new'], ['details-replacing', 'Details · active + in review', 'new'], ['hub-replacing', 'Hub · in review, publishing on', 'new'], ['hub-replace-returned', 'Hub · new QR returned', 'new'], ['console-replace-returned', 'Console · new QR returned', 'new']] },
 ];
 // Board frames that show a replacement state; the live device reads the same state from go().
@@ -316,8 +316,6 @@ function P2RequestCard({ request, onGive }) {
 // PROPOSAL `.promo-card` — an eyebrow, serif title, one line and a link, beside an
 // illustration. Used twice here (the console's payment setup nudge and the follower's Friday
 // card); PromptCard has no illustration slot. Kept local until approved.
-// With no action the card is a statement, not a target (the console's "Payments are paused"):
-// it renders as a plain section, so nothing invites a tap that does nothing.
 function P2Promo({ eyebrow, title, copy, action, art, onClick }) {
   const body = (
     <>
@@ -330,20 +328,20 @@ function P2Promo({ eyebrow, title, copy, action, art, onClick }) {
       <img src={art} alt="" />
     </>
   );
-  if (!action) return <section className="p2-promo is-static">{body}</section>;
   return <button type="button" className="p2-promo" onClick={onClick}>{body}</button>;
 }
 
-// ── First payee returned or suspended (4 Oct proposal frames, as built) ──
+// ── First payee returned or suspended (4 Oct frames, approved 4 Oct) ──
 // With no active payee the console and the hub draw the same card (app ConsolePaymentsCard
-// Returned / Paused): the reviewer's reason as a sentence first, then the way forward. A reason
+// Returned / Paused): the reviewer's reason as a sentence first, then the way forward. Both lead to
+// the first-time scan: a suspended masjid may submit a new QR (decided 4 Oct). A reason
 // gets a full stop when it has no closing punctuation, so the wire value "Name does not match"
 // reads "Name does not match.".
 const P2_FIRST_RETURN_REASON = 'Name does not match';
 const P2_SUSPEND_REASON = "QR is not the masjid's";
 const p2ReasonSentence = (reason) => { const text = (reason || '').trim(); return !text ? '' : /[.!?]$/.test(text) ? text : `${text}.`; };
 function P2PayeeStatusCard({ go, state }) {
-  if (state === 'paused') return <P2Promo eyebrow="UPI payments" title="Payments are paused" copy={`${p2ReasonSentence(P2_SUSPEND_REASON)} Paigham has paused UPI payments for your masjid.`} art="./assets/masjid-payment-setup.png" />;
+  if (state === 'paused') return <P2Promo eyebrow="UPI payments" title="Payments are paused" copy={`${p2ReasonSentence(P2_SUSPEND_REASON)} Paigham has paused UPI payments for your masjid.`} action="Scan a new QR" art="./assets/masjid-payment-setup.png" onClick={() => go('scan')} />;
   return <P2Promo eyebrow="UPI payments" title="Your QR was returned" copy={`${p2ReasonSentence(P2_FIRST_RETURN_REASON)} Scan your masjid’s payment QR again to resubmit it.`} action="Scan again" art="./assets/masjid-payment-setup.png" onClick={() => go('scan')} />;
 }
 // The hub with nothing active: the card stands in for the composer, and there is no FAB and no
@@ -617,12 +615,12 @@ function P2AdminQueue({ go }) {
   );
 }
 
-// `mode` adds the 4 Oct proposal frames on the same screen (the approved frame is mode 'pending'):
+// `mode` adds the 4 Oct frames (approved 4 Oct) on the same screen (the approved frame is mode 'pending'):
 // 'self' — as built: a Super Admin on the masjid's own committee presses Approve and the server
 //   refuses with SELF_REVIEW_NOT_ALLOWED; the admin app reads the code as a title.
-// 'active' — an approved payee: the bar offers Suspend only (as built), here with the proposed
-//   suspend sheet over it.
-// 'replacement' / 'confirm' — PROPOSAL, not built: a submission that replaces an active payee
+// 'active' — an approved payee: the bar offers Suspend only (as built), here with the
+//   approved suspend sheet over it.
+// 'replacement' / 'confirm' — approved 4 Oct, not built: a submission that replaces an active payee
 //   says so, lists the current payee first, and confirms in its own words. Needs a server field
 //   `replaces` on the review row; today the admin cannot tell a replacement from a first QR.
 const P2_SUSPEND_REASONS = ['Payments reported as misdirected', 'UPI ID closed or changed', 'Committee asked to pause', 'Under investigation', 'Other'];
@@ -670,7 +668,7 @@ function P2AdminReview({ go, mode = 'pending' }) {
         <Dialog isOpen mode="sheet" onClose={() => go('admin-review')} title="You can’t approve this QR" description="You are on this masjid’s committee, so another Super Admin must approve it." primary={null} secondary={{ text: 'Dismiss', onClick: () => go('admin-review') }} />
       )}
       {Dialog && mode === 'active' && (
-        // PROPOSAL: suspend reasons of its own. The construction is the admin app's reason sheet
+        // Approved 4 Oct, not built: suspend reasons of its own. The construction is the admin app's reason sheet
         // (the kit's option rows inside a Dialog sheet, actions under the list); `.adm-reject` is
         // page-local to the admin board, so its layout is restated as `.p2-reason-sheet`.
         <Dialog
@@ -701,7 +699,7 @@ function P2AdminReview({ go, mode = 'pending' }) {
   );
 }
 
-// PROPOSAL (not built): the Suspended tab's empty line. As built it reads "A suspended payee
+// Approved 4 Oct, not built: the Suspended tab's empty line. As built it reads "A suspended payee
 // stays here until it is reviewed again." The tabs are the admin app's (kit `.tbar`).
 function P2AdminSuspendedEmpty({ go }) {
   return (
@@ -886,11 +884,9 @@ function P2MasjidPayments({ go, form, setForm, requests = P2_REQUESTS, ended = P
 }
 // Continue stays enabled (proposal 2): the press answers with a field-level error, as
 // registration's Continue and the Salaah editor's Publish do. A grey button never says what is wrong.
-// `separators` is the 4 Oct PROPOSAL (not built): the wizard answers a decimal point or any other
-// non-digit with the give field's two lines instead of the minimum line.
-function P2RequestAmount({ go, form, setForm, errorInitial = false, separators = false }) {
+function P2RequestAmount({ go, form, setForm, errorInitial = false }) {
   const [tried, setTried] = React.useState(errorInitial);
-  const problem = p2AmountError(form.target, P2_REQUEST_MAX, `A request can be up to ${p2Rupees(P2_REQUEST_MAX)}`, separators);
+  const problem = p2AmountError(form.target, P2_REQUEST_MAX, `A request can be up to ${p2Rupees(P2_REQUEST_MAX)}`);
   const next = () => { if (problem) { setTried(true); return; } go('request-details'); };
   return (
     <P2Screen>
@@ -1153,7 +1149,7 @@ function P2Amount({ go, amount, setAmount, backTo = 'user-home', masjid = P2_MAS
   const { Dialog } = window;
   const [tried, setTried] = React.useState(errorInitial);
   const [failed, setFailed] = React.useState(Boolean(failure));
-  const problem = p2AmountError(amount, P2_GIVE_MAX, `You can give up to ${p2Rupees(P2_GIVE_MAX)} at a time`, true);
+  const problem = p2AmountError(amount, P2_GIVE_MAX, `You can give up to ${p2Rupees(P2_GIVE_MAX)} at a time`);
   const next = () => { if (problem) { setTried(true); return; } go('apps'); };
   // POC only: stand in for the prepare round trip, then hand off.
   React.useEffect(() => {
@@ -1295,8 +1291,7 @@ function P2Stage({ stage, live = false, go = P2_NOOP, give = P2_NOOP, approved =
     case 'console-paused': return <P2Console go={go} payeeCard="paused" />;
     case 'hub-returned': return <P2HubStatus go={go} state="returned" />;
     case 'hub-paused': return <P2HubStatus go={go} state="paused" />;
-    case 'request-amount-paise': return <P2RequestAmount go={go} form={live ? form : { ...form, target: '250.50' }} setForm={setForm} errorInitial />;
-    case 'request-amount-paise-fix': return <P2RequestAmount go={go} form={live ? form : { ...form, target: '250.50' }} setForm={setForm} errorInitial separators />;
+    case 'request-amount-paise-fix': return <P2RequestAmount go={go} form={live ? form : { ...form, target: '250.50' }} setForm={setForm} errorInitial />;
     case 'published-unknown': return <P2RequestReview key="live-as" go={go} form={P2_EDITED_FORM} liveAs={P2_SAMPLE_FORM} />;
     case 'console-ready': return <P2Console go={go} ready requests={requests} replacement={repl} />;
     case 'masjid-details': return <P2MasjidDetails go={go} requests={requests} replacement={repl} />;
@@ -1347,7 +1342,7 @@ function P2Device({ stage, live, ...props }) {
   return <div className="noor-frame" style={{ '--s': live ? '0.82' : '0.46' }}><div className="noor-frame-inner"><div className="noor-screen"><div className="noor-island" /><P2Stage stage={stage} live={live} {...props} /><div className="noor-home" /></div></div></div>;
 }
 
-const P2_MASJID_STAGES = ['console', 'console-ready', 'scan', 'review', 'pending', 'ready', 'masjid-details', 'masjid-details-basic', 'masjid-payments', 'request-amount', 'request-amount-invalid', 'request-details', 'request-review', 'request-ends', 'published', 'close-confirm', 'hub-extend', 'hub-ended-list', 'reminder-cap', 'initiations', 'replace-scan', 'replace-review', 'replace-pending', 'console-replacing', 'console-replace-returned', 'details-replacing', 'hub-replacing', 'hub-replace-returned', 'console-returned', 'console-paused', 'hub-returned', 'hub-paused', 'request-amount-paise', 'request-amount-paise-fix', 'published-unknown'];
+const P2_MASJID_STAGES = ['console', 'console-ready', 'scan', 'review', 'pending', 'ready', 'masjid-details', 'masjid-details-basic', 'masjid-payments', 'request-amount', 'request-amount-invalid', 'request-details', 'request-review', 'request-ends', 'published', 'close-confirm', 'hub-extend', 'hub-ended-list', 'reminder-cap', 'initiations', 'replace-scan', 'replace-review', 'replace-pending', 'console-replacing', 'console-replace-returned', 'details-replacing', 'hub-replacing', 'hub-replace-returned', 'console-returned', 'console-paused', 'hub-returned', 'hub-paused', 'request-amount-paise-fix', 'published-unknown'];
 const P2_EMPTY_FORM = { title: '', detail: '', target: '', duration: P2_DEFAULT_DURATION };
 function PaymentsV2Experience() {
   const params = new URLSearchParams(window.location.search);
@@ -1380,7 +1375,7 @@ function PaymentsV2Experience() {
     if (target === 'amount-paise') setAmount('250.50');
     if (target === 'amount-not-digits') setAmount('1,000');
     if (target === 'amount-rate-limited') setAmount('250');
-    if (target === 'request-amount-paise' || target === 'request-amount-paise-fix') setForm((current) => ({ ...current, target: '250.50' }));
+    if (target === 'request-amount-paise-fix') setForm((current) => ({ ...current, target: '250.50' }));
     if (P2_STAGE_REPLACEMENT[target]) setReplacement(P2_STAGE_REPLACEMENT[target]);
     if (P2_RECENT_ENDED_STAGES.includes(target)) setRecentEnded(true);
     // Confirming changed UPI details binds the give to the refreshed payee.
@@ -1401,13 +1396,17 @@ function PaymentsV2Experience() {
           <h1>Direct giving, without a payment claim</h1>
           <p>Five journeys on one board. A payment request has one type: the amount comes first and the title is optional. News without an ask stays a Paigham. The follower Friday card appears only on Fridays, for a primary masjid that accepts payments.</p>
           <p>Review fixes, 2 Oct 2026, approved as drawn on 2 Oct 2026: frames marked New were added, frames marked Changed alter an earlier frame. They cover extensions within 7 days of ending, replacing an active payment QR, a payee that changed before payment, and amount steps that answer on tap.</p>
-          <p>Review corrections, 4 Oct 2026, awaiting approval: frames marked Proposed come from an independent payments review and are not approved. Each frame’s note says whether the app or admin build already does it (drawn exactly as built, for approval or change) or whether it is a proposal not built yet. They cover a first payment QR that was returned or suspended, a publish that went live as first sent, whole-rupee amount lines, readable error titles in the app and admin, the admin suspend sheet, and reviewing a replacement payee.</p>
+          <p>Review corrections, 4 Oct 2026, approved by the product owner on 4 Oct 2026: frames marked Approved 4 Oct come from an independent payments review. Each frame’s note says whether the app or admin build already does it (drawn exactly as built) or whether it is not built yet. They cover a first payment QR that was returned or suspended, a publish that went live as first sent, whole-rupee amount lines, readable error titles in the app and admin, the admin suspend sheet, and reviewing a replacement payee.</p>
           <div className="p2-decisions">
-            <span className="eyebrow accent">Decisions needed · pick one wording each</span>
+            <span className="eyebrow accent">Decided 4 Oct · board wording kept, TRD §8.1 updated to match</span>
             <P2Group>
-              <P2Row icon="info" title="iOS result title" subtitle="Board and app: “Check {App}”. TRD §8.1: “Check your UPI app”, with the app name in the line under it." />
-              <P2Row icon="info" title="Verified payee line" subtitle="Board and app: “Verified payee · {UPI ID}”. TRD §8.1: “Verified payee · {verifiedName}”, the name the bank holds." />
-              <P2Row icon="info" title="Payee changed before hand-off" subtitle="Board and app: “These UPI details changed” + “No UPI app was opened. Check the new name and UPI ID before you pay.” TRD §8.1: “This masjid’s UPI details changed. Check the new details before you pay.”" />
+              <P2Row icon="check_circle" title="iOS result title" subtitle="“Check {App}”." />
+              <P2Row icon="check_circle" title="Verified payee line" subtitle="“Verified payee · {UPI ID}”, under the bank name." />
+              <P2Row icon="check_circle" title="Payee changed before hand-off" subtitle="“These UPI details changed” + “No UPI app was opened. Check the new name and UPI ID before you pay.”" />
+              <P2Row icon="check_circle" title="Suspended masjid" subtitle="May rescan: the paused card offers “Scan a new QR”, into the first-time scan." />
+            </P2Group>
+            <span className="eyebrow accent">Still open</span>
+            <P2Group>
               <P2Row icon="info" title="Admin reason “Other”" subtitle="The committee reads the wire value as a sentence, so it shows “Other.” with nothing to act on. Keep, reword, or ask the admin for a line." />
               <P2Row icon="info" title="POC frames with no app screen" subtitle="“Open UPI app” (hand-off) and “About payment status” (terms) have no screen in the app. Keep them as targets, or drop them from the board." />
             </P2Group>
@@ -1421,8 +1420,8 @@ function PaymentsV2Experience() {
               {row.frames.map(([id, label, mark, note]) => (
                 <div key={id} className="poc-board-item p2-frame-pick" role="button" tabIndex={0} aria-label={label} onClick={() => go(id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') go(id); }}>
                   <P2Device stage={id} />
-                  <span className="poc-frame-caption">{label}{mark && mark !== 'proposed' && <> <P2Badge tone={mark === 'new' ? 'amber' : 'teal'}>{mark === 'new' ? 'New' : 'Changed'}</P2Badge></>}</span>
-                  {mark === 'proposed' && <P2Badge tone="amber"><P2Icon name="hourglass_top" />Proposed · awaiting approval</P2Badge>}
+                  <span className="poc-frame-caption">{label}{mark && mark !== 'approved' && <> <P2Badge tone={mark === 'new' ? 'amber' : 'teal'}>{mark === 'new' ? 'New' : 'Changed'}</P2Badge></>}</span>
+                  {mark === 'approved' && <P2Badge tone="jade"><P2Icon name="check_circle" />Approved 4 Oct</P2Badge>}
                   {note && <small className="p2-frame-note">{note}</small>}
                 </div>
               ))}

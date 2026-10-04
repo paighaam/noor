@@ -113,9 +113,6 @@
 .p2-promo b{display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:var(--size-md);font-size:13px;color:var(--color-action-primary)}
 .p2-promo b .mi{font-size:16px}
 .p2-promo img{position:absolute;right:-8px;bottom:-8px;width:150px;height:136px;object-fit:contain}
-/* .is-static — a card with no action (Payments are paused): not pressable, no press feedback. */
-.p2-promo.is-static{cursor:default}
-.p2-promo.is-static:active{transform:none}
 /* .is-snapshot — the card is not pressable; its two buttons are. The actions run the card's full
    width under the copy, so the illustration moves up beside the copy instead of under it. */
 .p2-promo.is-snapshot{flex-direction:column;gap:var(--size-xl);min-height:0;cursor:default}
