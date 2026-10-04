@@ -15,6 +15,12 @@
 .p2-board-row{margin-bottom:8px;padding-left:46px}
 .p2-frame-pick{border:0;background:transparent;padding:0;cursor:pointer;font:inherit}
 .p2-frame-pick:focus-visible{outline:3px solid var(--color-action-primary);outline-offset:8px;border-radius:20px}
+.p2-board-intro>.p2-decisions{flex-direction:column;align-items:stretch;gap:var(--size-md);margin:0 0 20px}
+.p2-decisions .list-group{margin:0}
+/* A decision row quotes both wordings in full; the kit's two-line clamp would cut one off. */
+.p2-decisions .list-item-subtitle{display:block;overflow:visible}
+/* A frame's note sits under its caption, no wider than the scaled device. */
+.p2-frame-note{max-width:185px;font-size:11px;line-height:1.4;text-align:center;color:var(--color-info-secondary)}
 @media(max-width:760px){.payments-demo-tabs{position:sticky;top:var(--size-md);z-index:3}}
 
 /* ── Screen shell: the Console's Screen + Body geometry ── */
@@ -107,6 +113,9 @@
 .p2-promo b{display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:var(--size-md);font-size:13px;color:var(--color-action-primary)}
 .p2-promo b .mi{font-size:16px}
 .p2-promo img{position:absolute;right:-8px;bottom:-8px;width:150px;height:136px;object-fit:contain}
+/* .is-static — a card with no action (Payments are paused): not pressable, no press feedback. */
+.p2-promo.is-static{cursor:default}
+.p2-promo.is-static:active{transform:none}
 /* .is-snapshot — the card is not pressable; its two buttons are. The actions run the card's full
    width under the copy, so the illustration moves up beside the copy instead of under it. */
 .p2-promo.is-snapshot{flex-direction:column;gap:var(--size-xl);min-height:0;cursor:default}
@@ -162,3 +171,9 @@ textarea.p2-composer-field{min-height:96px;resize:none;font-size:14px}
 .p2-fab-split.compact>button{padding:0;gap:0}
 .p2-fab-split.compact .fab-label{max-width:0;opacity:0;transition:max-width var(--motion-standard) var(--ease-spring),opacity var(--motion-exit) var(--ease-out)}
 @media(prefers-reduced-motion:reduce){.p2-fab-split>button,.p2-fab-split .fab-label{transition:none}.p2-fab-split>button:active{transform:none}}
+
+/* ── The admin reason sheet (.adm-reject on the admin board, page-local there): the option list
+   scrolls under the title and the actions stay below it. Restated for the suspend proposal. ── */
+.p2-reason-sheet .dlg-body{flex-direction:column;min-height:0}
+.p2-reason-sheet .opt-list{flex:1;min-height:0}
+.p2-reason-sheet .dlg-actions{flex-shrink:0;margin-top:var(--size-xl)}
